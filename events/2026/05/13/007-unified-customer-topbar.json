@@ -1,0 +1,14 @@
+{
+  "event_id": "EVT-2026-05-13-007",
+  "timestamp": "2026-05-13T04:58:00Z",
+  "type": "UI_REFACTOR",
+  "severity": "LOW",
+  "title": "Unified Customer Top Control Bar",
+  "affected_domains": ["ui", "customers"],
+  "affected_nodes": ["app/src/modules/customers/page.tsx"],
+  "caused_by": [],
+  "related_incidents": [],
+  "root_cause": "User requested hiding the main title and combining all search, filters, and actions into a single top row.",
+  "resolution": "Removed the title/subtitle block. Merged the Search input, 4 Select Filters, and the Split Action Button into a single flex row at the top of the Customers page.",
+  "adr_reference": "None"
+}

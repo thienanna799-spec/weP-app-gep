@@ -1,0 +1,37 @@
+{
+  "event_id": "2026-05-12-003",
+  "timestamp": "2026-05-12T01:44:00Z",
+  "type": "INCIDENT",
+  "severity": "HIGH",
+  "title": "Full database reset — Vietnamese enum values stored as Mojibake",
+
+  "why": "When importing a MySQL dump on Windows, the CMD terminal uses Windows-1252 encoding by default, not UTF-8. Without --default-character-set=utf8mb4, MySQL interprets the byte stream incorrectly. Vietnamese characters like 'chờ duyệt' (UTF-8 bytes: E1 BB 9D...) were stored as literal Windows-1252 characters, producing garbage strings like 'chß╗¥ duyß╗çt'. When Prisma tried to map these stored values to enum definitions (which are correct NFC UTF-8), it could not find a match and threw PrismaClientUnknownRequestError for every query touching OrderStatus, RollStatus, or MaterialStatus.",
+
+  "root_cause": "MySQL dump imported without --default-character-set=utf8mb4 flag on Windows CMD; all Vietnamese enum values stored as Mojibake.",
+
+  "solution": "Full database reset via 'npx prisma db push --force-reset'. Wipes all data and rebuilds schema from Prisma definitions with correct UTF-8 encoding. All data lost intentionally.",
+
+  "blast_radius": [
+    "entire-database",
+    "all-order-queries",
+    "all-inventory-queries",
+    "all-production-queries",
+    "prisma-enum-mapping-system-wide"
+  ],
+
+  "affected_files": ["server/prisma/schema.prisma"],
+  "affected_nodes": ["OrderStatus", "RollStatus", "MaterialStatus", "PrismaClient", "prisma.order.findMany", "prisma.productRoll.findMany", "prisma.material.findMany"],
+  "affected_domains": ["orders", "inventory", "procurement", "production"],
+
+  "related_adr": [],
+  "caused_by": [],
+  "related_incidents": ["2026-05-12-002"],
+
+  "prevention": "RULE: Always import MySQL dumps with explicit charset flag: 'mysql -u root -p --default-character-set=utf8mb4 dbname < dump.sql'. Never import via Windows CMD without this flag. Add this to startup.bat and documentation.",
+
+  "workspace_id": "gep-erp-master",
+  "git_commit": "no-git",
+  "data_loss": true,
+  "data_loss_note": "All runtime data wiped intentionally. Schema structure preserved from Prisma schema file. No structural data loss.",
+  "applied_to": ["C:\\Users\\bachs\\Downloads\\weP-APP-main"]
+}

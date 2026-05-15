@@ -1,0 +1,14 @@
+{
+  "event_id": "EVT-2026-05-13-002",
+  "timestamp": "2026-05-13T03:37:00Z",
+  "type": "FEATURE_UPDATE",
+  "severity": "LOW",
+  "title": "Implemented Collapsible Sidebar UI",
+  "affected_domains": ["ui", "layout"],
+  "affected_nodes": ["AppLayout.tsx", "Sidebar.tsx"],
+  "caused_by": [],
+  "related_incidents": [],
+  "root_cause": "User requested ability to collapse sidebar to increase table workspace.",
+  "resolution": "Added isCollapsed state to AppLayout, saved to localStorage. Updated Sidebar to w-20 with dynamic logo scaling.",
+  "adr_reference": "None"
+}

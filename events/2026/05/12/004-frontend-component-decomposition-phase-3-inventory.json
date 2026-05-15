@@ -1,0 +1,34 @@
+{
+  "event_id": "2026-05-12-004",
+  "timestamp": "2026-05-12T07:35:49.107Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "no-git",
+  "type": "REFACTOR",
+  "severity": "0.5",
+  "title": "Frontend Component Decomposition (Phase 3 Inventory Batch)",
+  "why": "Inventory page.tsx was exceeding 300 LOC, violating architectural constraints and degrading maintainability",
+  "root_cause": "Inventory page.tsx was exceeding 300 LOC, violating architectural constraints and degrading maintainability",
+  "solution": "Extracted exportInventoryToExcel utility. Extracted InventoryStatsOverview, InventoryFilterBar, InventoryRollsTable components.",
+  "blast_radius": [
+    "inventory-stock-calculation",
+    "product-roll-status",
+    "order-reservation",
+    "qr-scanner"
+  ],
+  "affected_files": [
+    "page.tsx",
+    " exportExcel.ts",
+    " InventoryStatsOverview.tsx",
+    " InventoryFilterBar.tsx",
+    " InventoryRollsTable.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "general",
+    "inventory"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "data_loss": false,
+  "related_adr": []
+}

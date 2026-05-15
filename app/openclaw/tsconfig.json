@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "paths": {
+      "@runtime/*": ["./runtime/*"],
+      "@memory/*": ["./memory/*"],
+      "@planners/*": ["./planners/*"],
+      "@reviewers/*": ["./reviewers/*"],
+      "@providers/*": ["./providers/*"],
+      "@configs/*": ["./configs/*"],
+      "@integrations/*": ["./integrations/*"]
+    }
+  },
+  "include": [
+    "runtime/**/*",
+    "memory/**/*",
+    "orchestrator/**/*",
+    "planners/**/*",
+    "reviewers/**/*",
+    "providers/**/*",
+    "configs/**/*",
+    "integrations/**/*",
+    "scripts/**/*"
+  ],
+  "exclude": ["node_modules", "dist", "logs"]
+}

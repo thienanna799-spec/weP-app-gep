@@ -1,0 +1,18 @@
+{
+  "event_id": "EVT-2026-05-13-011",
+  "timestamp": "2026-05-13T13:03:00Z",
+  "type": "INCIDENT_FIX",
+  "severity": "CRITICAL",
+  "title": "System Login Failure — DATABASE_URL Using localhost Resolves to IPv6 on New PC",
+  "affected_domains": ["auth", "database", "infrastructure"],
+  "affected_files": ["app/.env"],
+  "affected_nodes": ["auth.controller.ts", "prisma.ts", "firebase-admin.ts"],
+  "caused_by": ["EVT-2026-05-13-010"],
+  "related_incidents": ["EVT-2026-05-13-010"],
+  "root_cause": "DATABASE_URL in app/.env used 'localhost' as MySQL host (mysql://root:matkhau@localhost:3306/bocchongsoc). On Node.js >=17, DNS resolution changed: 'localhost' resolves to IPv6 '::1' FIRST before IPv4 '127.0.0.1'. MySQL Docker container only binds to IPv4 (0.0.0.0/127.0.0.1). Prisma/mysql2 driver attempted to connect to ::1:3306 → ECONNREFUSED. All DB queries failed silently → auth controller crashed → 500 on /api/auth/google → login page completely broken. This is the same class of bug documented in ADR-014 for Vite proxy, but was NOT applied to DATABASE_URL.",
+  "resolution": "Changed DATABASE_URL from 'localhost' to '127.0.0.1' in app/.env. Restarted Express backend via nodemon (process kill → auto-restart). System immediately recovered.",
+  "prevention": "RULE: All internal service URLs (DATABASE_URL, Redis, any localhost service) MUST use '127.0.0.1' instead of 'localhost' in .env files on Windows + Node.js >=17 environments. Add this rule to .env.example as a comment. The ADR-014 pattern applies system-wide, not just to Vite proxy.",
+  "blast_radius": "CRITICAL — 100% login failure. No user could authenticate. Public URL (gepoder.click) completely inaccessible.",
+  "adr_reference": "app/ai/system/decisions/ADR-014-vite-proxy-127-vs-localhost.md",
+  "follow_up": "Update app/.env.example to document '127.0.0.1 required for Node.js >=17' and update ADR-014 to note this pattern applies to ALL service URLs, not just Vite proxy."
+}

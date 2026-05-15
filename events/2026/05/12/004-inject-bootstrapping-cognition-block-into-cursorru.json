@@ -1,0 +1,29 @@
+{
+  "event_id": "2026-05-12-004",
+  "timestamp": "2026-05-12T11:48:37.364Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "no-git",
+  "type": "CONFIG",
+  "severity": "HIGH",
+  "title": "Inject Bootstrapping Cognition Block into Cursorrules",
+  "why": "User explicitly requested that a strict BOOTSTRAP GEP ERP ENGINEERING COGNITION block be read at the start of every session to ensure AI agents do not act as generic chatbots.",
+  "root_cause": "User explicitly requested that a strict BOOTSTRAP GEP ERP ENGINEERING COGNITION block be read at the start of every session to ensure AI agents do not act as generic chatbots.",
+  "solution": "Prepended the 7-step BOOTSTRAP block to the very top of .cursorrules so it triggers immediately upon workspace load.",
+  "blast_radius": [
+    "frontend-backend-communication",
+    "all-api-calls",
+    "realtime-socket-events"
+  ],
+  "affected_files": [
+    ".cursorrules"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "infra",
+    "automation"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "data_loss": false,
+  "related_adr": []
+}

@@ -1,0 +1,12 @@
+{
+  "id": "INC-2026-05-13-002",
+  "type": "INCIDENT_PATTERN",
+  "title": "Vite Proxy ECONNREFUSED Race Condition",
+  "confidence": 1.0,
+  "recurrence_count": 2,
+  "domain_impact": ["infrastructure", "dev-server"],
+  "governance_weight": "INFO",
+  "content": "Trong môi trường Dev (chạy bằng concurrently), Frontend (Vite) khởi động siêu tốc (dưới 500ms), trong khi Backend (Node.js) mất 2-3 giây để load Firebase Admin và kết nối Database. Do đó, Frontend ngay lập tức gọi Socket.IO tới port 5000 khi Backend chưa bật, gây ra lỗi 'ECONNREFUSED 127.0.0.1:5000'. Lỗi này CHỈ mang tính chất hiển thị (cosmetic noise). Socket.IO có cơ chế auto-reconnect và sẽ tự động nối lại thành công sau vài giây khi Backend hiển thị '🚀 Backend API running'. KHÔNG CẦN FIX, ĐÂY KHÔNG PHẢI LỖI CHẾT NGƯỜI.",
+  "source_session": "eda81af5-2855-4066-ae6d-c04559a0a7f8",
+  "last_seen": "2026-05-13T10:24:00.000Z"
+}

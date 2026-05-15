@@ -1,0 +1,179 @@
+[
+  {
+    "domain": "system",
+    "action": "Initialize OpenClaw v3 Engineering Partner Status",
+    "riskLevel": "LOW",
+    "spec": {
+      "filesToCreate": [],
+      "filesToModify": [],
+      "steps": [
+        "Verify domain awareness for GEP ERP",
+        "Activate strict validation for P0 domains (Finance, Inventory, Orders)",
+        "Ready to receive tasks via Execution Kernel"
+      ]
+    },
+    "id": "e87ceb3c-a228-4dde-a24c-d9cb6bb1a523",
+    "status": "PENDING_APPROVAL",
+    "logs": [],
+    "createdAt": 1778429191632,
+    "updatedAt": 1778429191632
+  },
+  {
+    "domain": "inventory",
+    "action": "Design and implement Inventory Export API to Excel",
+    "riskLevel": "MEDIUM",
+    "spec": {
+      "filesToCreate": [
+        "src/modules/inventory/inventory.export.service.ts"
+      ],
+      "filesToModify": [
+        "src/modules/inventory/inventory.controller.ts",
+        "src/modules/inventory/inventory.route.ts",
+        "src/modules/inventory/inventory.service.ts"
+      ],
+      "steps": [
+        "Install exceljs dependency",
+        "Create InventoryExportDto for filtering",
+        "Implement generateStockExcel method in service with permission check for cost data",
+        "Add GET /export endpoint in inventory.route.ts",
+        "Handle file stream response in controller"
+      ]
+    },
+    "id": "b4ef1554-0156-4e44-a4aa-e15f48c64f50",
+    "status": "DONE",
+    "logs": [
+      "[2026-05-10T16:08:28.406Z] Task approved by user via Control Plane.",
+      "[2026-05-10T16:09:30.023Z] Worker picked up the task.",
+      "[2026-05-10T16:14:46.427Z] Task completed successfully."
+    ],
+    "createdAt": 1778429266555,
+    "updatedAt": 1778429686427
+  },
+  {
+    "domain": "system",
+    "action": "Verify and track task status in Antigravity Worker queue",
+    "riskLevel": "LOW",
+    "spec": {
+      "filesToCreate": [],
+      "filesToModify": [],
+      "steps": [
+        "Query task status for ID b4ef1554-0156-4e44-a4aa-e15f48c64f50",
+        "Confirm handover to Antigravity Worker",
+        "Monitor execution logs for potential runtime errors"
+      ]
+    },
+    "id": "e6f6d179-ebb4-4614-860b-943390458558",
+    "status": "PENDING_APPROVAL",
+    "logs": [],
+    "createdAt": 1778429710834,
+    "updatedAt": 1778429710834
+  },
+  {
+    "domain": "system",
+    "action": "Initialize OpenClaw v3 partnership",
+    "riskLevel": "LOW",
+    "spec": {
+      "filesToCreate": [],
+      "filesToModify": [],
+      "steps": [
+        "Identify the next priority module in GEP ERP",
+        "Analyze existing schema and business logic",
+        "Propose implementation or optimization plan"
+      ]
+    },
+    "id": "9d1f04a1-fb29-4b92-8553-cfc600ac8fbf",
+    "status": "PENDING_APPROVAL",
+    "logs": [],
+    "lockedBy": null,
+    "lockedAt": null,
+    "createdAt": 1778432093307,
+    "updatedAt": 1778432093307
+  },
+  {
+    "domain": "general",
+    "action": "Identity and Capability Introduction",
+    "riskLevel": "LOW",
+    "spec": {
+      "filesToCreate": [],
+      "filesToModify": [],
+      "steps": [
+        "Establish communication context with the user",
+        "Define operational boundaries and domain expertise",
+        "Ready to receive technical tasks for GEP ERP"
+      ]
+    },
+    "id": "84182480-3a57-4d07-b95f-bdadf673af72",
+    "status": "PENDING_APPROVAL",
+    "logs": [],
+    "lockedBy": null,
+    "lockedAt": null,
+    "createdAt": 1778432589364,
+    "updatedAt": 1778432589364
+  },
+  {
+    "domain": "system",
+    "action": "Introduce OpenClaw v3 capabilities and roles",
+    "riskLevel": "LOW",
+    "spec": {
+      "filesToCreate": [],
+      "filesToModify": [],
+      "steps": [
+        "Identify as Senior AI Engineering Partner",
+        "Explain triple-role: Architect, Reviewer, Manager",
+        "Outline domain expertise (Finance, Inventory, Orders)",
+        "Define interaction protocol and mandatory response format"
+      ],
+      "estimatedLOC": 0
+    },
+    "id": "5965efce-e857-42ab-bbd7-4f324388a8a6",
+    "status": "PENDING_APPROVAL",
+    "logs": [],
+    "lockedBy": null,
+    "lockedAt": null,
+    "createdAt": 1778467174531,
+    "updatedAt": 1778467174531
+  },
+  {
+    "domain": "system",
+    "action": "Explain governance guardrails and operational constraints",
+    "riskLevel": "LOW",
+    "spec": {
+      "filesToCreate": [],
+      "filesToModify": [],
+      "steps": [
+        "Define identity as Engineering Partner",
+        "List P0/P1 domain constraints",
+        "Explain transaction and audit log requirements",
+        "Confirm adherence to existing DB schema"
+      ],
+      "estimatedLOC": 0
+    },
+    "id": "45a90860-fa9f-4836-9b9c-e2a55a1c4c02",
+    "status": "PENDING_APPROVAL",
+    "logs": [],
+    "lockedBy": null,
+    "lockedAt": null,
+    "createdAt": 1778467433816,
+    "updatedAt": 1778467433816
+  },
+  {
+    "domain": "system",
+    "action": "Identify AI Model & Capabilities",
+    "riskLevel": "LOW",
+    "spec": {
+      "filesToCreate": [],
+      "filesToModify": [],
+      "steps": [
+        "Confirming identity as OpenClaw v3 powered by Gemini 1.5 Pro"
+      ],
+      "estimatedLOC": 0
+    },
+    "id": "c0d9f0d8-273b-44d0-9f0f-a186dcd6a002",
+    "status": "PENDING_APPROVAL",
+    "logs": [],
+    "lockedBy": null,
+    "lockedAt": null,
+    "createdAt": 1778467788598,
+    "updatedAt": 1778467788598
+  }
+]

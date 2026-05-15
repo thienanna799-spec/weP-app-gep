@@ -1,0 +1,6 @@
+{
+  "name": "Hệ thống Quản lý Sản xuất Bọc Chống Sốc",
+  "description": "Hệ thống quản lý quy trình sản xuất, tồn kho, đơn hàng và phân quyền người dùng qua Google OAuth.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

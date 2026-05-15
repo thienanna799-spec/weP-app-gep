@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  openclaw-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openclaw-gateway
+    restart: always                   # tự restart nếu crash
+
+    environment:
+      - NODE_ENV=production
+
+    env_file:
+      - .env                          # đọc API key, Telegram token từ .env
+
+    volumes:
+      # Mount thư mục ai/ để OpenClaw đọc memory (read-only)
+      - ../ai:/app/ai:ro
+      # Lưu logs ra ngoài container (persistent)
+      - ./logs:/app/openclaw/logs
+
+    # Không cần expose port vì gateway chỉ poll Telegram API
+    # không có server HTTP

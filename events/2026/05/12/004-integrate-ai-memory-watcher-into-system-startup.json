@@ -1,0 +1,29 @@
+{
+  "event_id": "2026-05-12-004",
+  "timestamp": "2026-05-12T11:32:29.264Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "no-git",
+  "type": "CONFIG",
+  "severity": "MEDIUM",
+  "title": "Integrate AI Memory Watcher into System Startup",
+  "why": "User requested that the change-detector automation script runs automatically on system boot so that AI context is continuously hydrated in the background.",
+  "root_cause": "User requested that the change-detector automation script runs automatically on system boot so that AI context is continuously hydrated in the background.",
+  "solution": "Added Step 7 to startup.bat to automatically launch 'npm run watch' in app/ai/automation, and updated all step counters to [x/7].",
+  "blast_radius": [
+    "frontend-backend-communication",
+    "all-api-calls",
+    "realtime-socket-events"
+  ],
+  "affected_files": [
+    "startup.bat"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "infra",
+    "automation"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "data_loss": false,
+  "related_adr": []
+}

@@ -1,0 +1,14 @@
+{
+  "event_id": "EVT-2026-05-13-005",
+  "timestamp": "2026-05-13T04:38:00Z",
+  "type": "ARCHITECTURAL_UPDATE",
+  "severity": "MEDIUM",
+  "title": "Migrated Header Elements to Sidebar Footer",
+  "affected_domains": ["ui", "layout", "navigation"],
+  "affected_nodes": ["Header.tsx", "Sidebar.tsx", "AppLayout.tsx", "NotificationCenter.tsx"],
+  "caused_by": [],
+  "related_incidents": [],
+  "root_cause": "User requested removing the top header to maximize vertical screen space for the dashboard.",
+  "resolution": "Removed Header.tsx entirely from AppLayout. Migrated Language Selector, Notification Center, User Profile, and Logout actions to a new User Footer at the bottom of Sidebar.tsx. Adapted Notification dropdown to open sideways (placement='right') to prevent clipping.",
+  "adr_reference": "None"
+}

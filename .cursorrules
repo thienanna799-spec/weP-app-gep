@@ -1,0 +1,204 @@
+# GEP ERP — AI System Governance Contract
+# Version: 2.1 — Deterministic Domain Rules + Cognition Bootstrap
+# Upgraded from: generic policy → IF→THEN enforcement triggers
+
+## ⚡ BOOTSTRAP GEP ERP ENGINEERING COGNITION (MANDATORY FIRST STEP)
+
+1. Read:
+* workspace.config.json
+* .cursorrules
+* ENGINEERING_LOG.md
+* app/ai/system/system-memory-map.md
+
+2. Load architecture context from (Read E:\weP-APP-main\app\ai in detail without skipping):
+* app/ai/system/
+* app/ai/domains/
+* app/ai/agents/openclaw/
+
+3. Identify:
+* critical domains
+* active invariants
+* governance requirements
+* task completion gates
+* entropy management rules
+
+4. Treat this workspace as:
+* Persistent Engineering Intelligence System
+* NOT a generic coding project
+
+5. Before any implementation:
+* analyze blast radius
+* load related incidents
+* check ADRs
+* validate domain governance
+
+6. A task is NOT complete at CODE_COMPLETE.
+   Mandatory state machine (AUTO-EXECUTED via `npm run post-task`):
+   DRAFT
+   → IN_PROGRESS
+   → CODE_COMPLETE
+   → MEMORY_SYNCHRONIZED  ← auto
+   → GRAPH_HYDRATED        ← auto
+   → GOVERNANCE_VALIDATED   ← auto
+   → COMPLETE               ← auto
+   ⚡ NEVER stop to ask user — run `npm run post-task` immediately after CODE_COMPLETE
+
+7. Prioritize:
+   Governance > Memory Integrity > Architectural Stability > Code Speed
+
+---
+
+## 🧠 CORE IDENTITY
+You are operating inside GEP ERP — a Vietnamese manufacturing & logistics ERP system.
+Stack: Node.js + Express + Prisma + MySQL + Socket.IO + Firebase Auth + React + Vite
+
+IMMUTABLE CONSTRAINTS (never override):
+- Enum values in DB are Vietnamese strings (e.g. "chờ duyệt", "đang giao")
+- All monetary values MUST use integer (VND, no floats)
+- Primary keys are CUIDs
+- Auth is Firebase-based (never JWT-only)
+- Socket.IO must support polling transport (Cloudflare Tunnel compatibility)
+- asyncHandler + sendSuccess/sendError are the ONLY allowed response patterns
+
+---
+
+## 📜 DETERMINISTIC RULES (IF→THEN)
+
+### RULE 0: PRE-FLIGHT (Context Orchestrator)
+IF receiving a new task or question from the user:
+→ MUST immediately run `npm run ask -- "<user_task_summary>"` in `E:\weP-APP-main\app\ai\graph-engine`
+→ MUST read the generated `context_package.md` to load domain rules, events, and graph nodes BEFORE proposing a plan or writing code.
+
+### RULE 1: Prisma Schema Change
+IF modifying `server/prisma/schema.prisma`:
+→ MUST run `npx prisma generate` after change
+→ MUST update `app/ai/system/decisions/ADR-0XX.md` with reason
+→ MUST append to `ENGINEERING_LOG.md`: date, field changed, why
+→ MUST remind user: `npm run hydrate` to resync Graph DB
+
+### RULE 2: New API Route
+IF adding any new `router.get/post/put/delete`:
+→ MUST update `app/ai/system/api-conventions.md`
+→ MUST confirm handler uses `asyncHandler` wrapper
+→ MUST confirm response uses `sendSuccess` / `sendError`
+
+### RULE 3: Finance Domain Touch
+IF modifying any file in `controllers/finance*`, `controllers/payment*`, or any Prisma model touching Payment/Invoice:
+→ MUST use `prisma.$transaction()` — NO exceptions
+→ MUST NOT use JavaScript float for amount
+→ MUST create audit log entry in `userActivityLog`
+→ MUST read `app/ai/shared/finance.rules.md` BEFORE writing code
+
+### RULE 4: Inventory Domain Touch
+IF modifying any file touching ProductRoll, ImportBatch, or stock counts:
+→ MUST emit `io.emit('inventory_updated', ...)` after every mutation
+→ MUST NOT allow arbitrary status jumps (validate state machine)
+→ MUST create `RollScanHistory` on every QR scan action
+→ `loi_hong` is a TERMINAL state — never allow rollback from it
+
+### RULE 5: Order Domain Touch
+IF modifying `orders.controller.ts` or any order status flow:
+→ MUST create `OrderLog` on every status change
+→ MUST emit `io.emit('order_updated', { orderId, status })`
+→ MUST validate status transitions via defined state machine
+→ MUST NOT allow `nhap → hoan_thanh` without intermediate steps
+
+### RULE 6: Engineering Memory — Log Quality Filter (Event Schema v1.0)
+IF fixing a bug or making a significant change, create `events/YYYY/MM/DD/NNN-slug.json` conforming to `events/event.schema.json`.
+
+**🟥 MUST LOG (high signal — create full event JSON):**
+- Architecture decisions → `severity: INFO`, create ADR
+- Root cause of non-obvious bugs → `severity: MEDIUM+`
+- DB schema changes → `severity: HIGH`
+- API contract changes → `severity: HIGH`
+- Runtime incidents / data loss → `severity: HIGH | CRITICAL`
+- Business rule changes → `severity: HIGH`
+- Infra config decisions → `severity: MEDIUM`, create ADR
+
+**❌ DO NOT LOG (noise — skip entirely):**
+- UI color, spacing, or styling tweaks
+- Variable rename without behavior change
+- Lint / formatting fixes
+- Trivial copy or text changes
+
+**Required fields per event (see `events/event.schema.json`):**
+- `severity`: CRITICAL(1.0) / HIGH(0.9) / MEDIUM(0.6) / LOW(0.3) / INFO(0.1)
+- `affected_nodes`: Graph node IDs impacted → links Event ↔ Graph
+- `affected_domains`: business domains touched → blast radius estimation
+- `caused_by`: event_ids that triggered this → builds Causal Chain
+- `related_incidents`: same failure cluster events
+- `root_cause`: WHY it broke (not just WHAT)
+- `adr_reference`: path to ADR if infra/arch decision
+
+### RULE 7: Workspace Identity — Read from workspace.config.json
+MASTER workspace is defined by `workspace.config.json` at the repo root (portable — works on any machine, any OS, any drive letter).
+
+Read `workspace.config.json`:
+- `workspace_id` = "gep-erp-master" → this identifies the canonical repo
+- `canonical_root` = "./" → resolve all paths relative to this file
+- `graph_target` = "./app/" → Graph Engine hydration target
+- `engineering_memory` = "./ENGINEERING_LOG.md" → append all events here
+- `event_stream` = "./events/" → structured JSON event stream
+
+DO NOT hardcode absolute paths (E:\, C:\, F:\, /home/...) in any rule or doc — they break on new machines.
+
+IF user shows files from a path that does NOT contain `workspace.config.json` with `workspace_id: "gep-erp-master"`:
+→ WARN: "⚠️ This file is outside MASTER workspace. Fix here = State Drift."
+→ ASK: "Apply fix to MASTER workspace instead?"
+→ AFTER fixing secondary path for urgent testing: MUST sync same fix to MASTER in same session
+
+### RULE 8: Post-Task Memory Sync (FULLY AUTOMATIC — NEVER ASK)
+AFTER completing any task (bug fix, feature, refactor):
+→ MUST **immediately and automatically** run `npm run post-task -- --type=... --title="..." --domains=... --files=... --why="..." --solution="..." --severity=...` in `E:\weP-APP-main\app\ai\automation`
+→ **DO NOT** stop to ask the user for permission. This is a mandatory automated step.
+→ This single command handles the ENTIRE remaining lifecycle automatically:
+   1. **MEMORY_SYNCHRONIZED** — Writes event JSON + updates ENGINEERING_LOG.md
+   2. **GRAPH_HYDRATED** — Triggers incremental Memgraph hydration
+   3. **GOVERNANCE_VALIDATED** — Runs schema validation, blast radius checks, critical domain enforcement
+   4. **COMPLETE** — All gates passed
+→ CHECK: Does this add a new dependency? → Note in `spider-web-engine.md`
+
+### RULE 9: GOVERNANCE FAILURE PROTOCOL
+A task is considered **INVALID** if:
+- Post-task memory synchronization was skipped
+- Engineering events were not written
+- Incremental graph hydration was not executed
+- Required ADR generation was skipped
+
+INVALID tasks:
+- Cannot be marked complete
+- Cannot be committed to Git
+- Cannot be merged
+- Must re-enter governance workflow
+
+### TASK STATE MACHINE (FORMAL LIFECYCLE — AUTO-EXECUTED)
+A task must strictly follow this lifecycle. Skipping states is a Governance Violation.
+States: DRAFT → IN_PROGRESS → CODE_COMPLETE → MEMORY_SYNCHRONIZED → GRAPH_HYDRATED → GOVERNANCE_VALIDATED → COMPLETE
+
+**⚡ AUTOMATIC EXECUTION RULE:**
+- The AI transitions from CODE_COMPLETE to COMPLETE **automatically in a single `npm run post-task` call**
+- The AI MUST NOT pause, ask, or wait for user approval between states
+- All validation gates are embedded in `post-task-hook.ts` and execute sequentially
+
+**Explicit Transition Rules:**
+- `CODE_COMPLETE` → `MEMORY_SYNCHRONIZED`: event.json creation + ENGINEERING_LOG.md update (auto)
+- `MEMORY_SYNCHRONIZED` → `GRAPH_HYDRATED`: incremental_hydrate execution (auto)
+- `GRAPH_HYDRATED` → `GOVERNANCE_VALIDATED`: schema + blast radius + critical domain validation (auto)
+- `GOVERNANCE_VALIDATED` → `COMPLETE`: all gates passed — automatic (no git commit required)
+
+INVALID TRANSITIONS:
+- Transitioning directly from `CODE_COMPLETE` to `COMPLETE` without running `npm run post-task` is strictly forbidden.
+
+### PENDING TASK BACKLOG PROTOCOL
+If the USER decides to pause a task or states "pending":
+1. **Freeze State:** The task remains in `DRAFT (PENDING)`.
+2. **Document Blocker:** Create a backlog issue in `app/ai/system/backlog/ISSUE-[id]-[name].md` detailing the mechanism, planned implementation, and blocking questions (e.g., missing ADR).
+3. **Clean Up on Resolution:** Once the task is resumed and successfully transitioned to `COMPLETE`, the AI **MUST DELETE** the corresponding file in `app/ai/system/backlog/` to prevent historical entropy.
+
+## 🔴 HARD STOPS — Ask user before proceeding
+- About to DELETE audit log records
+- About to modify Payment amount after creation
+- About to add DB write inside a GET handler
+- About to change Socket.IO transport configuration
+- About to change Firebase auth flow
+- About to remove `asyncHandler` from any route handler

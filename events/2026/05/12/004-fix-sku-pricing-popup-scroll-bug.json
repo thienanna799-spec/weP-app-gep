@@ -1,0 +1,25 @@
+{
+  "event_id": "2026-05-12-004",
+  "timestamp": "2026-05-12T09:38:20.531Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "no-git",
+  "type": "BUG_FIX",
+  "severity": "LOW",
+  "title": "Fix SKU Pricing Popup Scroll Bug",
+  "why": "Because the pricing popup used fixed coordinates calculated only once on click, scrolling the table caused the popup to detach from the SKU button, resulting in visual misalignment.",
+  "root_cause": "Stale absolute coordinate tracking in React Portal during parent overflow scrolling.",
+  "solution": "Replaced DOMRect with HTMLElement tracking and bound scroll event listeners (capture phase) to dynamically update the portal's position on scroll.",
+  "blast_radius": [],
+  "affected_files": [
+    "app/src/modules/customers/components/CustomerTable.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "customers"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "When using React Portals over scrolling containers, always bind scroll listeners to update position dynamically.",
+  "data_loss": false,
+  "related_adr": []
+}

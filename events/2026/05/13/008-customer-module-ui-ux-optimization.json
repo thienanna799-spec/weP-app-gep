@@ -1,0 +1,19 @@
+{
+  "event_id": "EVT-2026-05-13-008",
+  "timestamp": "2026-05-13T07:15:00Z",
+  "type": "UI_REFACTOR",
+  "severity": "LOW",
+  "title": "Customer Module Deep Optimization (Space & UX)",
+  "affected_domains": ["ui", "customers"],
+  "affected_nodes": [
+    "app/src/modules/customers/page.tsx",
+    "app/src/modules/customers/components/CustomerTable.tsx",
+    "app/src/modules/customers/components/CustomerBasicInfo.tsx",
+    "app/src/components/layout/AppLayout.tsx"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "root_cause": "User required extreme UI optimization: minimizing dead space, moving controls to global header, true Excel WYSIWYG export, and editable operational status.",
+  "resolution": "Compressed KPIs into a single horizontal strip. Portaled Top Control Bar into AppLayout Header. Expanded table max-h. Moved Bank Accounts into dropdown menu. Added shadow-[0_0_15px_rgba(0,0,0,0.05)] to Top Control Bar. Converted CSV export to true XLSX export. Added Trạng thái field to CustomerBasicInfo.tsx.",
+  "adr_reference": "None"
+}

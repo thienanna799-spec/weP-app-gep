@@ -1,0 +1,1284 @@
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================================
+// USERS & AUTH
+// =========================================
+
+model User {
+  id          String     @id @default(cuid())
+  uid         String     @unique
+  email       String     @unique
+  name        String
+  avatar      String?    @db.Text
+  role        UserRole   @default(pending)
+  status      UserStatus @default(active)
+  phone       String?
+  department  String?
+  position    String?
+  lastLoginAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  createdOrders           Order[]           @relation("OrderCreatedBy")
+  approvedOrders          Order[]           @relation("OrderApprovedBy")
+  productionOrdersCreated ProductionOrder[] @relation("ProductionCreatedBy")
+  productionOrdersCharge  ProductionOrder[] @relation("ProductionInCharge")
+  rollsProduced           ProductRoll[]     @relation("RollProducedBy")
+  loginLogs               UserLoginLog[]
+  activityLogs            UserActivityLog[]
+  driver                  Driver?
+  fuelLogs                FuelLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  super_admin
+  admin
+  staff
+  driver
+  pending
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  active
+  blocked
+  pending
+  inactive
+
+  @@map("user_status")
+}
+
+// =========================================
+// CUSTOMERS
+// =========================================
+
+model Customer {
+  id              String       @id @default(cuid())
+  code            String       @unique    // CUSTOMER CODE
+  name            String       @db.VarChar(500)  // CUSTOMER NAME
+  phone           String       @db.VarChar(500)  // Phone number (may contain multiple)
+  email           String?      @db.VarChar(500)
+  address         String       @db.Text   // ADDRESS
+
+  // ── CRM Fields ──────────────────────────────────────
+  dateOfOrigin              DateTime?              // DATE OF ORIGIN
+  recipientName             String?    @db.VarChar(500)  // RECIPIENT'S NAME
+  groupName                 String?    @db.VarChar(500)  // GROUP NAME
+  groupChatLink             String?    @db.VarChar(1000) // Group chat URL (Zalo/Messenger/Telegram)
+  operatingPlatform         String?    @db.VarChar(500)  // OPERATING PLATFORM
+  customerCharacteristics   String?    @db.Text    // CUSTOMER CHARACTERISTICS
+  gipCode                   String?    @db.VarChar(500)  // GIP code
+  product                   String?    @db.Text    // Sản phẩm chính
+  operationalStatus         String     @default("active") // active | inactive | stopped
+  boss                      String?    @db.VarChar(500)  // Người phụ trách (BOSS)
+  cessationDate             DateTime?              // Date of confirmation of cessation
+  tag                       String?    @db.VarChar(500)  // VIP, Tiềm năng, etc.
+  googleMapsLink            String?    @db.VarChar(1000) // Google Maps URL for exact delivery location
+
+  // ── Legacy / Existing Fields ────────────────────────
+  province        String?
+  district        String?
+  customerType    CustomerType @default(ca_nhan)
+  company         String?      @db.VarChar(500)
+  taxCode         String?
+  contactPerson   String?      @db.VarChar(500)
+  preferredPayment PaymentMethod @default(cod)
+  bankAccountNumber String?
+  bankName          String?
+  bankAccountHolder String?
+  telegramChatId  String?
+  notes           String?      @db.Text
+  isActive        Boolean      @default(true)
+  creditLimit     Float        @default(0)     // 0 = không giới hạn
+  creditDays      Int          @default(30)    // Số ngày thanh toán cho phép
+  totalOrders     Int          @default(0)
+  totalRevenue    Float        @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  orders Order[]
+  crmNotes      CustomerNote[]
+  crmFollowUps  CustomerFollowUp[]
+  crmActivities CustomerActivity[]
+  pricingRules  CustomerPricing[]
+  subSkuStatuses CustomerSubSkuStatus[]
+
+  @@map("customers")
+}
+
+model CustomerPricing {
+  id            String   @id @default(cuid())
+  customerId    String
+  sku           String   @db.VarChar(500)
+  price         Float
+  isActive      Boolean  @default(true)
+  updatedBy     String?  @db.VarChar(255)
+  updatedByName String?  @db.VarChar(255)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, sku])
+  @@map("customer_pricing")
+}
+
+model CustomerSubSkuStatus {
+  id         String  @id @default(cuid())
+  customerId String
+  subSku     String  @db.VarChar(500)
+  isActive   Boolean @default(true)
+
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, subSku])
+  @@map("customer_subsku_status")
+}
+
+enum CustomerType {
+  ca_nhan
+  doanh_nghiep
+
+  @@map("customer_type")
+}
+
+enum PaymentMethod {
+  cod
+  bank_transfer
+  credit
+
+  @@map("payment_method")
+}
+
+// =========================================
+// BANK ACCOUNTS (System-level)
+// =========================================
+
+model BankAccount {
+  id            String   @id @default(cuid())
+  bankName      String
+  accountNumber String
+  accountHolder String
+  branch        String?
+  isDefault     Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("bank_accounts")
+}
+
+// =========================================
+// ORDERS
+// =========================================
+
+model Order {
+  id               String        @id @default(cuid())
+  code             String        @unique
+  customerId       String?
+  customerName     String
+  customerPhone    String
+  customerEmail    String?
+  customerAddress  String        @db.Text
+  status           OrderStatus   @default(nhap)
+  priority         OrderPriority @default(trung_binh)
+  paymentMethod    PaymentMethod @default(cod)
+  bankAccountId    String?
+  paymentStatus    String?       @default("chua_thanh_toan")
+  note             String?       @db.Text
+  quantity         Int
+  deliveryDeadline DateTime?
+  approvedBy       String?
+  approvedByName   String?
+  approvedAt       DateTime?
+  createdBy        String
+  createdByName    String?
+  totalRevenue     Float?
+  totalCost        Float?
+  profit           Float?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  customer         Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  creator          User?             @relation("OrderCreatedBy", fields: [createdBy], references: [uid], onDelete: NoAction, onUpdate: NoAction)
+  approver         User?             @relation("OrderApprovedBy", fields: [approvedBy], references: [uid], onDelete: NoAction, onUpdate: NoAction)
+  items            OrderItem[]
+  logs             OrderLog[]
+  deliveryProofs   DeliveryProof[]
+  productionOrders ProductionOrder[]
+  rolls            ProductRoll[]
+  shippingOrders   ShippingOrder[]
+  contactLogs      ContactLog[]
+  payments         Payment[]
+  returnRequests   ReturnRequest[]
+
+  @@map("orders")
+}
+
+// ── Payments (Ghi nhận thanh toán đơn hàng) ────────────
+model Payment {
+  id            String   @id @default(cuid())
+  orderId       String
+  amount        Float                       // Số tiền thanh toán
+  method        String   @default("cash")   // cod, bank_transfer, cash, cong_no
+  reference     String?                     // Mã giao dịch / biên lai
+  note          String?  @db.Text
+  paidAt        DateTime @default(now())
+  recordedBy    String?                     // userId ghi nhận
+  recordedByName String?
+  createdAt     DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ── Contact Logs (Driver ↔ Customer communication tracking) ──
+model ContactLog {
+  id            String   @id @default(cuid())
+  orderId       String
+  type          String   // "call" | "message"
+  phoneNumber   String
+  result        String?  // "connected" | "no_answer" | "busy" | "wrong_number"
+  duration      Int?     // call duration in seconds
+  content       String?  @db.Text  // message content
+  method        String?  // "sms" | "zalo" | "other"
+  note          String?  @db.Text
+  recordingUrl  String?  @db.Text  // call recording base64/url
+  createdBy     String
+  createdByName String?
+  createdAt     DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("contact_logs")
+}
+
+enum OrderStatus {
+  nhap             @map("nháp")
+  cho_duyet        @map("chờ duyệt")
+  da_duyet         @map("đã duyệt")
+  tu_choi          @map("từ chối")
+  dang_chuan_bi    @map("đang chuẩn bị hàng")
+  cho_xuat_kho     @map("chờ xuất kho")
+  dang_giao        @map("đang giao")
+  hoan_thanh       @map("hoàn thành")
+  huy              @map("hủy")
+
+  @@map("order_status")
+}
+
+enum OrderPriority {
+  thap        @map("thấp")
+  trung_binh  @map("trung bình")
+  cao
+  khan_cap    @map("khẩn cấp")
+
+  @@map("order_priority")
+}
+
+model OrderItem {
+  id            String  @id @default(cuid())
+  orderId       String
+  productName   String
+  specification String
+  quantity      Int
+  unit          String
+  unitPrice     Float
+  subSku        String?
+  sku           String?
+  note          String? @db.Text
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+model OrderLog {
+  id        String   @id @default(cuid())
+  orderId   String
+  action    String
+  oldValue  String?  @db.Text
+  newValue  String?  @db.Text
+  note      String?  @db.Text
+  createdBy String
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_logs")
+}
+
+model DeliveryProof {
+  id          String   @id @default(cuid())
+  orderId     String
+  fileType    String   // "image" or "video"
+  fileName    String
+  fileUrl     String   @db.LongText  // base64 data URL or external URL
+  note        String?  @db.Text
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_proofs")
+}
+
+// =========================================
+// MATERIALS
+// =========================================
+
+model Material {
+  id                String         @id @default(cuid())
+  code              String         @unique
+  name              String
+  group             String
+  unit              String
+  currentStock      Float          @default(0)
+  minStock          Float          @default(0)
+  purchasePrice     Float          @default(0)
+  supplier          String?
+  warehouseLocation String?
+  status            MaterialStatus @default(con_hang)
+  notes             String?        @db.Text
+  imageUrl          String?        @db.LongText
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  transactions  MaterialTransactionItem[]
+  bomComponents MaterialBOMComponent[]
+  rolls         ProductRoll[]
+
+  @@map("materials")
+}
+
+enum MaterialStatus {
+  con_hang   @map("còn hàng")
+  sap_het    @map("sắp hết")
+  het_hang   @map("hết hàng")
+  ngung_dung @map("ngừng sử dụng")
+
+  @@map("material_status")
+}
+
+model MaterialTransaction {
+  id          String   @id @default(cuid())
+  type        String   // 'import' | 'export'
+  date        DateTime @default(now())
+  supplier    String?
+  operator    String
+  referenceId String?
+  notes       String?  @db.Text
+
+  items MaterialTransactionItem[]
+
+  @@map("material_transactions")
+}
+
+model MaterialTransactionItem {
+  id            String @id @default(cuid())
+  transactionId String
+  materialId    String
+  materialName  String
+  quantity      Float
+  unitPrice     Float?
+
+  transaction MaterialTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  material    Material            @relation(fields: [materialId], references: [id], onDelete: NoAction)
+
+  @@map("material_transaction_items")
+}
+
+model MaterialBOM {
+  id          String @id @default(cuid())
+  productId   String @unique
+  productName String
+
+  components MaterialBOMComponent[]
+
+  @@map("material_boms")
+}
+
+model MaterialBOMComponent {
+  id           String @id @default(cuid())
+  bomId        String
+  materialId   String
+  materialName String
+  quantity     Float
+  unit         String
+
+  bom      MaterialBOM @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  material Material    @relation(fields: [materialId], references: [id], onDelete: NoAction)
+
+  @@map("material_bom_components")
+}
+
+// =========================================
+// PRODUCTION ORDERS
+// =========================================
+
+model ProductionOrder {
+  id               String                @id @default(cuid())
+  code             String                @unique
+  productionDate   DateTime
+  creatorId        String
+  personInChargeId String?
+  requiredQuantity Int
+  specs            String
+  status           ProductionOrderStatus @default(waiting_material)
+  consumptionRate  String?
+  targetRolls      Int
+  rollLength       Float                 @default(0)
+  rollWeight       Float                 @default(0)
+  productName      String?
+  machineArea      String?
+  notes            String?               @db.Text
+  deadline         DateTime?
+  orderId          String?
+  completedAt      DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  creator        User?   @relation("ProductionCreatedBy", fields: [creatorId], references: [uid], onDelete: NoAction)
+  personInCharge User?   @relation("ProductionInCharge", fields: [personInChargeId], references: [uid], onDelete: NoAction)
+  order          Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  materials      ProductionOrderMaterial[]
+  rolls          ProductRoll[]
+
+  @@map("production_orders")
+}
+
+enum ProductionOrderStatus {
+  waiting_material
+  ready
+  producing
+  completed
+  cancelled
+
+  @@map("production_order_status")
+}
+
+model ProductionOrderMaterial {
+  id                String @id @default(cuid())
+  productionOrderId String
+  materialId        String
+  materialName      String
+  quantity          Float
+
+  productionOrder ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+
+  @@map("production_order_materials")
+}
+
+// =========================================
+// INVENTORY (PRODUCT ROLLS)
+// =========================================
+
+model ProductRoll {
+  id                String     @id
+  code              String     @unique
+  qrCode            String     @unique
+  productId         String
+  productName       String
+  sku               String?    // Customer-facing SKU code (e.g. BWP-TH-BLACK-4inch)
+  subSku            String?    // Internal warehouse SUB-SKU code (e.g. TT-BWP-BLACK-Half)
+  specification     String
+  stockQuantity     Int        @default(1)  // Number of items this roll represents (for accumulation)
+  length            Float
+  weight            Float
+  height            Float?     // added for storage capacity calculation
+  diameter          Float?     // optional for future use
+  productionDate    DateTime
+  productionOrderId String?
+  positionWarehouse String?
+  positionArea      String?
+  positionShelf     String?
+  positionLayer     String?
+  positionSlot      String?
+  status            RollStatus @default(dang_san_xuat)
+  creator           String
+  orderId           String?
+  materialId        String?
+  sourceType        String     @default("production") // "production" | "manual"
+  supplier          String?
+  importBatchId     String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  producer        User?            @relation("RollProducedBy", fields: [creator], references: [uid], onDelete: NoAction)
+  order           Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  productionOrder ProductionOrder? @relation(fields: [productionOrderId], references: [id], onDelete: SetNull)
+  material        Material?        @relation(fields: [materialId], references: [id], onDelete: SetNull)
+  importBatch     ImportBatch?     @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  scanHistory     RollScanHistory[]
+  movements       RollMovement[]
+  shippingItems   ShippingOrderItem[]
+
+  @@map("product_rolls")
+}
+
+enum RollStatus {
+  dang_san_xuat  @map("đang sản xuất")
+  trong_kho      @map("trong kho")
+  da_giu_cho_don @map("đã giữ cho đơn hàng")
+  da_xuat_kho    @map("đã xuất kho")
+  loi_hong       @map("lỗi / hỏng")
+  hoan_tra       @map("hoàn trả")
+
+  @@map("roll_status")
+}
+
+model RollScanHistory {
+  id        String   @id @default(cuid())
+  rollId    String
+  timestamp DateTime @default(now())
+  action    String
+  operator  String
+
+  roll ProductRoll @relation(fields: [rollId], references: [id], onDelete: Cascade)
+
+  @@map("roll_scan_history")
+}
+
+model RollMovement {
+  id            String   @id @default(cuid())
+  rollId        String
+  fromWarehouse String?
+  fromArea      String?
+  fromShelf     String?
+  fromLayer     String?
+  fromSlot      String?
+  toWarehouse   String
+  toArea        String
+  toShelf       String
+  toLayer       String
+  toSlot        String
+  operator      String
+  reason        String
+  timestamp     DateTime @default(now())
+
+  roll ProductRoll @relation(fields: [rollId], references: [id], onDelete: Cascade)
+
+  @@map("roll_movements")
+}
+
+model InventoryCheck {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  operator  String
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  results InventoryCheckResult[]
+
+  @@map("inventory_checks")
+}
+
+model InventoryCheckResult {
+  id              String  @id @default(cuid())
+  checkId         String
+  rollId          String
+  status          String
+  actualWarehouse String?
+  actualArea      String?
+  actualShelf     String?
+  actualLayer     String?
+  actualSlot      String?
+  notes           String? @db.Text
+
+  check InventoryCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+
+  @@map("inventory_check_results")
+}
+
+// =========================================
+// SHIPPING
+// =========================================
+
+model ShippingOrder {
+  id                 String         @id @default(cuid())
+  code               String         @unique
+  orderId            String
+  customerName       String
+  customerPhone      String
+  customerAddress    String         @db.Text
+  totalRolls         Int
+  totalQuantity      Int            @default(0)
+  status             ShippingStatus @default(cho_xuat_kho)
+  assignedDriverId   String?
+  assignedDriverName String?
+  assignedVehicle    String?
+  deliveryDeadline   DateTime?
+  shippedAt          DateTime?
+  deliveredAt        DateTime?
+  failedAt           DateTime?
+  failReason         String?        @db.Text
+  createdBy          String
+  notes              String?        @db.Text
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  order        Order               @relation(fields: [orderId], references: [id], onDelete: NoAction)
+  items        ShippingOrderItem[]
+  deliveryLogs DeliveryLog[]
+
+  @@map("shipping_orders")
+}
+
+enum ShippingStatus {
+  cho_xuat_kho         @map("chờ xuất kho")
+  dang_chuan_bi        @map("đang chuẩn bị hàng")
+  da_xuat_kho          @map("đã xuất kho")
+  da_ban_giao_tai_xe   @map("đã bàn giao cho tài xế")
+  dang_giao            @map("đang giao")
+  giao_thanh_cong      @map("giao thành công")
+  giao_that_bai        @map("giao thất bại")
+  hoan_tra             @map("hoàn trả")
+
+  @@map("shipping_status")
+}
+
+model ShippingOrderItem {
+  id              String   @id @default(cuid())
+  shippingOrderId String
+  rollId          String
+  qrCode          String
+  productName     String
+  specification   String
+  status          String   @default("exported")
+  createdAt       DateTime @default(now())
+
+  shippingOrder ShippingOrder @relation(fields: [shippingOrderId], references: [id], onDelete: Cascade)
+  roll          ProductRoll   @relation(fields: [rollId], references: [id], onDelete: NoAction)
+
+  @@map("shipping_order_items")
+}
+
+model DeliveryLog {
+  id              String   @id @default(cuid())
+  shippingOrderId String
+  driverId        String
+  action          String
+  note            String   @db.Text
+  latitude        Float?
+  longitude       Float?
+  imageUrl        String?  @db.Text
+  signatureUrl    String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  shippingOrder ShippingOrder @relation(fields: [shippingOrderId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_logs")
+}
+
+// =========================================
+// DRIVERS & VEHICLES
+// =========================================
+
+model Driver {
+  id               String       @id @default(cuid())
+  userId           String?      @unique
+  code             String       @unique
+  name             String
+  phone            String
+  email            String
+  address          String       @db.Text
+  dob              String
+  idCard           String
+  licenseNo        String
+  licenseType      String
+  licenseExpiry    String
+  status           DriverStatus @default(available)
+  joinedDate       String
+  notes            String?      @db.Text
+  avatar           String?      @db.Text
+  idCardPhoto      String?      @db.LongText  // CCCD front
+  idCardPhotoBack  String?      @db.LongText  // CCCD back
+  licensePhoto     String?      @db.LongText  // GPLX front
+  licensePhotoBack String?      @db.LongText  // GPLX back
+  currentVehicleId String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  user      User?    @relation(fields: [userId], references: [uid], onDelete: SetNull)
+  vehicle   Vehicle? @relation(fields: [currentVehicleId], references: [id], onDelete: SetNull)
+  fuelLogs     FuelLog[]
+  gpsLogs      GpsLog[]
+  dailyLogs    DailyVehicleLog[]
+  maintenances VehicleMaintenance[]
+
+  @@map("drivers")
+}
+
+enum DriverStatus {
+  available
+  delivering
+  leave
+  inactive
+  blocked
+
+  @@map("driver_status")
+}
+
+model Vehicle {
+  id               String        @id @default(cuid())
+  plateNumber      String        @unique
+  type             String
+  capacity         Float
+  year             Int
+  condition        String
+  registrationDate String
+  insuranceExpiry  String
+  currentMileage   Float         @default(0)
+  status           VehicleStatus @default(available)
+  activeLogId      String?                           // currently checked-in log (prevent double check-in)
+  notes            String?       @db.Text
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  drivers      Driver[]
+  maintenances VehicleMaintenance[]
+  fuelLogs     FuelLog[]
+  dailyLogs    DailyVehicleLog[]
+
+  @@map("vehicles")
+}
+
+enum VehicleStatus {
+  available
+  in_use
+  maintenance
+  broken
+  inactive
+
+  @@map("vehicle_status")
+}
+
+model VehicleMaintenance {
+  id             String   @id @default(cuid())
+  vehicleId      String
+  driverId       String?
+  date           DateTime
+  type           String
+  cost           Float
+  mileage        Float
+  notes          String?  @db.Text
+  receiptUrl     String?  @db.Text  // Ảnh hóa đơn
+  damagePhotoUrl String?  @db.Text  // Ảnh hư hỏng
+  status         String   @default("pending") // pending, approved, rejected
+  createdAt      DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  Driver? @relation(fields: [driverId], references: [id], onDelete: SetNull)
+
+  @@map("vehicle_maintenances")
+}
+
+model FuelLog {
+  id         String   @id @default(cuid())
+  driverId   String
+  vehicleId  String?
+  userId     String?
+  amount     Float
+  volume     Float    @default(0)
+  mileage    Float    @default(0)
+  date       DateTime @default(now())
+  notes      String?  @db.Text
+  receiptUrl String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  driver  Driver?  @relation(fields: [driverId], references: [id], onDelete: NoAction)
+  user    User?    @relation(fields: [userId], references: [uid], onDelete: SetNull)
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@map("fuel_logs")
+}
+
+model GpsLog {
+  id        String   @id @default(cuid())
+  driverId  String
+  lat       Float
+  lng       Float
+  timestamp DateTime @default(now())
+
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@map("gps_logs")
+}
+
+model DailyVehicleLog {
+  id                  String   @id @default(cuid())
+  logDate             DateTime @db.Date              // YYYY-MM-DD only
+
+  // Xe + Tài xế (snapshot)
+  vehicleId           String
+  driverId            String
+  plateNumber         String
+  driverName          String
+
+  // KM bắt đầu (check-in)
+  startKm             Float?
+  startKmPhoto        String?  @db.LongText
+  checkInTime         DateTime?
+
+  // KM kết thúc (check-out)
+  endKm               Float?
+  endKmPhoto          String?  @db.LongText
+  checkOutTime        DateTime?
+
+  // Computed
+  totalKm             Float?
+  status              String   @default("active")    // active | completed
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  vehicle     Vehicle          @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver      Driver           @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  fuelEntries DailyFuelEntry[]
+
+  @@unique([vehicleId, logDate])
+  @@map("daily_vehicle_logs")
+}
+
+model DailyFuelEntry {
+  id                  String   @id @default(cuid())
+  dailyLogId          String
+
+  fuelKm              Float?
+  fuelKmPhoto         String?  @db.LongText
+  fuelCost            Float?
+  fuelCostPhoto       String?  @db.LongText
+  fuelPricePerLiter   Float?
+  fuelPricePhoto      String?  @db.LongText
+  fuelVolume          Float?
+  fuelNotes           String?  @db.Text
+
+  createdAt           DateTime @default(now())
+
+  dailyLog DailyVehicleLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+
+  @@map("daily_fuel_entries")
+}
+
+// =========================================
+// ADMIN LOGS
+// =========================================
+
+model UserLoginLog {
+  id        String    @id @default(cuid())
+  userId    String
+  email     String
+  ipAddress String?
+  userAgent String?   @db.Text
+  loginAt   DateTime  @default(now())
+  logoutAt  DateTime?
+  status    String    @default("success")
+
+  user User @relation(fields: [userId], references: [uid], onDelete: Cascade)
+
+  @@map("user_login_logs")
+}
+
+model UserActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  email       String
+  action      String
+  module      String
+  referenceId String?
+  description String   @db.Text
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [uid], onDelete: Cascade)
+
+  @@map("user_activity_logs")
+}
+
+// =========================================
+// CRM – CUSTOMER NOTES
+// =========================================
+
+model CustomerNote {
+  id         String   @id @default(cuid())
+  customerId String
+  content    String   @db.Text
+  createdBy  String
+  createdByName String
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_notes")
+}
+
+// =========================================
+// CRM – FOLLOW-UP TASKS
+// =========================================
+
+model CustomerFollowUp {
+  id         String              @id @default(cuid())
+  customerId String
+  title      String
+  description String?            @db.Text
+  dueDate    DateTime
+  type       FollowUpType        @default(call)
+  status     FollowUpStatus      @default(pending)
+  createdBy  String
+  createdByName String
+  completedAt DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_follow_ups")
+}
+
+enum FollowUpType {
+  call
+  email
+  visit
+  quote
+  other
+
+  @@map("follow_up_type")
+}
+
+enum FollowUpStatus {
+  pending
+  completed
+  cancelled
+  overdue
+
+  @@map("follow_up_status")
+}
+
+// =========================================
+// CRM – ACTIVITY TIMELINE
+// =========================================
+
+model CustomerActivity {
+  id         String   @id @default(cuid())
+  customerId String
+  type       String   // note_added, followup_created, followup_completed, order_created, status_changed
+  title      String
+  description String? @db.Text
+  metadata   Json?    @db.Json
+  createdBy  String?
+  createdByName String?
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_activities")
+}
+
+// =========================================
+// IMPORT BATCHES (Manual Stock Intake)
+// =========================================
+
+model ImportBatch {
+  id            String   @id @default(cuid())
+  productName   String
+  sku           String?
+  subSku        String?
+  specification String   @default("")
+  color         String?
+  otherSpecs    String?
+  costPrice     Float?
+  quantity      Int
+  supplier      String?
+  note          String?  @db.Text
+  nhapKho       Float    @default(0)
+  xuatKho       Float    @default(0)
+  tonKho        Float    @default(0)
+  createdBy     String
+  createdByName String?
+  createdAt     DateTime @default(now())
+
+  rolls ProductRoll[]
+
+  @@map("import_batches")
+}
+
+// =========================================
+// SYSTEM CONFIG (key-value)
+// =========================================
+
+model SystemConfig {
+  key       String   @id @db.VarChar(100)
+  value     String   @db.LongText
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@map("system_config")
+}
+
+// =========================================
+// OCR AUDIT
+// =========================================
+
+enum AuditReviewStatus {
+  pending
+  approved
+  rejected
+  escalated
+
+  @@map("audit_review_status")
+}
+
+model OcrAuditLog {
+  id              String   @id @default(cuid())
+  driverId        String
+  vehicleId       String?
+  referenceId     String   // ID của FuelLog, DailyVehicleLog hoặc Maintenance
+  documentType    String   // 'fuel_receipt', 'odometer', 'repair_receipt'
+  imageUrl        String   @db.Text
+
+  // Data
+  declaredValue   Decimal  @db.Decimal(15,2)
+  extractedValue  Decimal? @db.Decimal(15,2)
+  differenceValue Decimal? @db.Decimal(15,2)
+  rawOcrText      String?  @db.LongText
+  imageHash       String?
+
+  // Fraud & AI
+  confidenceScore Float?
+  riskLevel       String?  // low, medium, high
+  fraudReason     String?  // duplicate_receipt, amount_mismatch, impossible_mileage, low_confidence
+
+  // Engine Status
+  ocrProvider     String?  // google_vision, mock, fpt_ai
+  pipelineStatus  String   @default("queued") // queued, processing, parsed, audited, failed
+  retryCount      Int      @default(0)
+
+  // Workflow
+  reviewStatus    AuditReviewStatus @default(pending)
+  auditTaskId     String?  // ID của Task nếu bị Mismatch
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("ocr_audit_logs")
+}
+
+
+// =========================================
+// PROCUREMENT (Mua hàng)
+// =========================================
+
+model Supplier {
+  id            String   @id @default(cuid())
+  code          String   @unique              // NCC-0001
+  name          String
+  phone         String?
+  email         String?
+  address       String?  @db.Text
+  contactPerson String?
+  taxCode       String?
+  bankAccount   String?
+  bankName      String?
+  rating        Int?     @default(5)          // 1-5 đánh giá NCC
+  notes         String?  @db.Text
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id            String              @id @default(cuid())
+  code          String              @unique  // PO-20260508-001
+  supplierId    String
+  status        PurchaseOrderStatus @default(draft)
+  totalAmount   Float               @default(0)
+  paidAmount    Float               @default(0)
+  expectedDate  DateTime?
+  receivedDate  DateTime?
+  approvedBy    String?
+  approvedByName String?
+  approvedAt    DateTime?
+  createdBy     String
+  createdByName String?
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  supplier Supplier            @relation(fields: [supplierId], references: [id])
+  items    PurchaseOrderItem[]
+  logs     PurchaseOrderLog[]
+
+  @@map("purchase_orders")
+}
+
+enum PurchaseOrderStatus {
+  draft
+  pending_approval
+  approved
+  ordered
+  partially_received
+  received
+  cancelled
+
+  @@map("purchase_order_status")
+}
+
+model PurchaseOrderItem {
+  id              String @id @default(cuid())
+  purchaseOrderId String
+  materialId      String
+  materialName    String
+  quantity        Float
+  unitPrice       Float
+  receivedQty     Float  @default(0)
+  unit            String @default("kg")
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@map("purchase_order_items")
+}
+
+model PurchaseOrderLog {
+  id              String   @id @default(cuid())
+  purchaseOrderId String
+  action          String
+  note            String?  @db.Text
+  createdBy       String
+  createdAt       DateTime @default(now())
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@map("purchase_order_logs")
+}
+
+// ── Returns / Refunds ──────────────────────────────────────
+model ReturnRequest {
+  id              String    @id @default(cuid())
+  code            String    @unique       // RTN-001
+  orderId         String
+  shippingOrderId String?
+  type            String                  // failed_delivery | customer_return | damaged
+  reason          String    @db.Text
+  status          String    @default("pending")  // pending → approved → processing → resolved → rejected
+  resolution      String?                 // refund | reship | exchange | cancel
+
+  refundAmount    Float     @default(0)
+  refundMethod    String?                 // cash | bank_transfer | credit
+  refundedAt      DateTime?
+  refundNote      String?   @db.Text
+
+  // Re-ship tracking
+  reshipOrderId   String?                 // New order created for reship
+
+  processedBy     String?
+  processedByName String?
+  resolvedAt      DateTime?
+
+  createdBy       String
+  createdByName   String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("return_requests")
+}
+
+// ── Notification Log ───────────────────────────────────────
+model NotificationLog {
+  id          String   @id @default(cuid())
+  type        String                  // debt_alert | order_status | low_stock | delivery_proof | return_update
+  channel     String   @default("telegram")  // telegram | email
+  recipient   String                  // chat_id or email address
+  subject     String
+  content     String   @db.Text
+  status      String   @default("sent")  // sent | failed
+  relatedId   String?                 // orderId, customerId, etc.
+  relatedType String?                 // order | customer | material
+  error       String?  @db.Text
+  sentAt      DateTime @default(now())
+
+  @@map("notification_logs")
+}
+
+// ── Stocktake (Kiểm kê) ────────────────────────────────────
+model Stocktake {
+  id              String          @id @default(cuid())
+  code            String          @unique
+  date            DateTime        @default(now())
+  status          String          @default("draft") // draft | completed | cancelled
+  warehouse       String?
+  notes           String?         @db.Text
+  createdBy       String
+  createdByName   String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  items           StocktakeItem[]
+
+  @@map("stocktakes")
+}
+
+model StocktakeItem {
+  id              String     @id @default(cuid())
+  stocktakeId     String
+  rollId          String?
+  rollCode        String
+  productName     String?
+  expectedQty     Int        @default(1)
+  actualQty       Int        @default(0)
+  difference      Int        @default(0)
+  status          String     @default("missing") // matched | missing | surplus
+  note            String?    @db.Text
+
+  stocktake       Stocktake  @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
+
+  @@map("stocktake_items")
+}
+
+// ── Internal Transfer (Chuyển kho) ─────────────────────────
+model InternalTransfer {
+  id              String     @id @default(cuid())
+  code            String     @unique
+  date            DateTime   @default(now())
+  status          String     @default("completed") // pending | completed | cancelled
+  fromLocation    String
+  toLocation      String
+  notes           String?    @db.Text
+  createdBy       String
+  createdByName   String
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  items           TransferItem[]
+
+  @@map("internal_transfers")
+}
+
+model TransferItem {
+  id                 String           @id @default(cuid())
+  internalTransferId String
+  rollId             String
+  rollCode           String
+
+  transfer           InternalTransfer @relation(fields: [internalTransferId], references: [id], onDelete: Cascade)
+
+  @@map("transfer_items")
+}

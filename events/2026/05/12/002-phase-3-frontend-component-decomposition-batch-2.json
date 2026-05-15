@@ -1,0 +1,37 @@
+{
+  "event_id": "2026-05-12-002",
+  "timestamp": "2026-05-12T06:49:37.738Z",
+  "workspace_id": "unknown",
+  "git_commit": "no-git",
+  "type": "refactor",
+  "severity": "0.4",
+  "title": "Phase 3: Frontend Component Decomposition (Batch 2)",
+  "why": "Frontend components exceeded 200 lines",
+  "root_cause": "Frontend components exceeded 200 lines",
+  "solution": "Extracted Sub-components (ProductDetailPanel, PricingImportDropzone, MapCanvas, etc)",
+  "blast_radius": [
+    "inventory-stock-calculation",
+    "product-roll-status",
+    "order-reservation",
+    "qr-scanner",
+    "shift-management",
+    "vehicle-assignment",
+    "gps-tracking",
+    "ocr-audit"
+  ],
+  "affected_files": [
+    "ProductCatalogTab.tsx",
+    " PricingImportModal.tsx",
+    " DriverLocationMap.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "inventory",
+    "customers",
+    "drivers"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "data_loss": false,
+  "related_adr": []
+}

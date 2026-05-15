@@ -1,0 +1,16 @@
+{
+  "event_id": "EVT-2026-05-13-013",
+  "timestamp": "2026-05-13T13:31:00Z",
+  "type": "INCIDENT_FIX",
+  "severity": "MEDIUM",
+  "title": "ChartZoom Modal — Recharts Blank Canvas on Zoom (Recurrence)",
+  "affected_domains": ["ui", "reports", "finance"],
+  "affected_files": ["app/src/components/ui/ChartZoom.tsx"],
+  "affected_nodes": ["ChartZoom.tsx", "ProductionReport.tsx", "InventoryReport.tsx", "DashboardCharts.tsx"],
+  "caused_by": [],
+  "related_incidents": ["EVT-2026-05-12-recharts-blank-canvas"],
+  "root_cause": "ResponsiveContainer (Recharts) uses DOM.offsetHeight to measure its parent container and determine render dimensions. The modal chart container used Tailwind CSS classes (h-[70vh], flex-1, min-h-[400px]) instead of explicit inline style height. During the 200ms CSS animation (chartZoomIn scale transition), the flex layout was not fully resolved, so offsetHeight returned 0 or incorrect values. Recharts rendered with height=0 → blank canvas. Additionally, the chart mounted synchronously with the modal open, racing against the animation/layout settle.",
+  "resolution": "Three-layer fix applied to ChartZoom.tsx: (1) Modal container uses inline style height='88vh' instead of CSS flex classes — gives Recharts a concrete pixel value. (2) Chart area uses inline style height='calc(88vh - 73px)' — explicit, not flex-derived. (3) Added useEffect modalMounted flag with 50ms delay — chart only mounts after DOM is settled, showing a spinner meanwhile. Added key={title} prop to force fresh Recharts instance instead of reusing the background chart's DOM.",
+  "prevention": "RULE: When using Recharts ResponsiveContainer inside CSS animations or flex containers, ALWAYS provide explicit pixel height via inline style. Never rely on flex-1 or h-[vh] CSS classes for ResponsiveContainer measurement. The 50ms mounted delay pattern should be reused whenever Recharts mounts inside a modal/dialog with opening animations.",
+  "blast_radius": "MEDIUM — affects all 20 chart instances across Dashboard, Finance, and Reports modules when zoomed."
+}

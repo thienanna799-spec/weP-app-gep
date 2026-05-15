@@ -1,0 +1,35 @@
+{
+  "event_id": "2026-05-12-001",
+  "timestamp": "2026-05-12T02:21:00Z",
+  "type": "BUG_FIX",
+  "severity": "MEDIUM",
+  "title": "Vite proxy ECONNREFUSED on every startup",
+
+  "why": "Node.js >=17 changed DNS resolution to prefer IPv6 (::1) before IPv4 (127.0.0.1). The Express backend binds to 0.0.0.0 (IPv4 only). Vite boots in ~370ms but backend takes 3-5s to initialize Firebase. When Vite proxy resolves 'localhost' → '::1' and fires a Socket.IO request before backend is ready, the connection is refused because nothing is listening on ::1.",
+
+  "root_cause": "Node.js >=17 DNS prefers IPv6; backend is IPv4-only; Vite boots faster than backend.",
+
+  "solution": "Changed all Vite proxy targets from http://localhost:5000 to http://127.0.0.1:5000 (explicit IPv4). Added proxy.on('error') handler suppressing ECONNREFUSED during startup race window.",
+
+  "blast_radius": [
+    "frontend-backend-communication",
+    "socket-io-realtime-events",
+    "vite-hmr-reconnect",
+    "all-api-calls-during-startup"
+  ],
+
+  "affected_files": ["app/vite.config.ts"],
+  "affected_nodes": ["ViteProxyConfig", "SocketIOClient.connect"],
+  "affected_domains": ["infra"],
+
+  "related_adr": ["ADR-014-vite-proxy-127-vs-localhost.md"],
+  "caused_by": [],
+  "related_incidents": [],
+
+  "prevention": "Never use 'localhost' as a proxy target in Node.js >=17 environments. Always use explicit '127.0.0.1' for IPv4 or '::1' for IPv6.",
+
+  "workspace_id": "gep-erp-master",
+  "git_commit": "no-git",
+  "data_loss": false,
+  "applied_to": ["E:\\weP-APP-main\\app", "C:\\Users\\bachs\\Downloads\\weP-APP-main"]
+}

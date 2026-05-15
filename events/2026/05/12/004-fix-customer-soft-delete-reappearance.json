@@ -1,0 +1,25 @@
+{
+  "event_id": "2026-05-12-004",
+  "timestamp": "2026-05-12T10:41:46.490Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "no-git",
+  "type": "BUG_FIX",
+  "severity": "MEDIUM",
+  "title": "Fix Customer Soft Delete Reappearance",
+  "why": "The GET /customers API was fetching all customers, including soft-deleted ones (isActive: false), because it lacked a default active filter. This caused deleted customers to reappear on the UI upon F5 refresh.",
+  "root_cause": "Missing default isActive filter for soft-deleted records in Prisma findMany.",
+  "solution": "Added a default 'where.isActive = true' filter to getCustomers when the 'active' parameter is undefined.",
+  "blast_radius": [],
+  "affected_files": [
+    "app/server/src/controllers/customers.controller.ts"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "customers"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "When implementing Soft Deletes, always ensure GET APIs filter by the active flag by default.",
+  "data_loss": false,
+  "related_adr": []
+}

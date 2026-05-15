@@ -1,0 +1,435 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user profile with role-based access control",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "avatar": { "type": "string" },
+        "role": { "type": "string", "enum": ["super_admin", "admin", "staff", "driver", "pending"] },
+        "status": { "type": "string", "enum": ["active", "pending", "blocked", "inactive"] },
+        "phone": { "type": "string" },
+        "department": { "type": "string" },
+        "position": { "type": "string" },
+        "lastLoginAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["email", "name", "role", "status"]
+    },
+    "UserLoginLog": {
+      "title": "User Login Log",
+      "description": "Logs of user login and logout events",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "ipAddress": { "type": "string" },
+        "userAgent": { "type": "string" },
+        "loginAt": { "type": "string", "format": "date-time" },
+        "logoutAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["success", "failed", "blocked"] }
+      }
+    },
+    "UserActivityLog": {
+      "title": "User Activity Log",
+      "description": "Logs of specific user actions within modules",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "action": { "type": "string" },
+        "module": { "type": "string" },
+        "referenceId": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Driver": {
+      "title": "Driver",
+      "description": "Detailed driver information",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "dob": { "type": "string", "format": "date" },
+        "idCard": { "type": "string" },
+        "licenseNo": { "type": "string" },
+        "licenseType": { "type": "string" },
+        "licenseExpiry": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["available", "delivering", "leave", "inactive", "blocked"] },
+        "joinedDate": { "type": "string", "format": "date" },
+        "notes": { "type": "string" },
+        "avatar": { "type": "string" },
+        "currentVehicleId": { "type": "string" }
+      }
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Vehicle fleet management",
+      "type": "object",
+      "properties": {
+        "plateNumber": { "type": "string" },
+        "type": { "type": "string" },
+        "capacity": { "type": "number" },
+        "year": { "type": "number" },
+        "condition": { "type": "string" },
+        "registrationDate": { "type": "string", "format": "date" },
+        "insuranceExpiry": { "type": "string", "format": "date" },
+        "currentMileage": { "type": "number" },
+        "status": { "type": "string", "enum": ["available", "in_use", "maintenance", "broken", "inactive"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "FuelLog": {
+      "title": "Fuel Log",
+      "description": "Fuel consumption records",
+      "type": "object",
+      "properties": {
+        "driverId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "amount": { "type": "number" },
+        "volume": { "type": "number" },
+        "mileage": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "receiptUrl": { "type": "string" }
+      }
+    },
+    "VehicleMaintenance": {
+      "title": "Vehicle Maintenance",
+      "description": "Maintenance and repair history",
+      "type": "object",
+      "properties": {
+        "vehicleId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "type": { "type": "string" },
+        "cost": { "type": "number" },
+        "mileage": { "type": "number" },
+        "notes": { "type": "string" }
+      }
+    },
+    "Material": {
+      "title": "Material",
+      "description": "Raw materials and inventory",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "group": { "type": "string" },
+        "unit": { "type": "string" },
+        "currentStock": { "type": "number" },
+        "minStock": { "type": "number" },
+        "purchasePrice": { "type": "number" },
+        "supplier": { "type": "string" },
+        "warehouseLocation": { "type": "string" },
+        "status": { "type": "string" },
+        "notes": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["code", "name", "group", "unit", "currentStock"]
+    },
+    "MaterialTransaction": {
+      "title": "Material Transaction",
+      "description": "Import/Export logs for materials",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["import", "export"] },
+        "date": { "type": "string" },
+        "items": { "type": "array" },
+        "supplier": { "type": "string" },
+        "operator": { "type": "string" },
+        "referenceId": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "MaterialBOM": {
+      "title": "Material BOM",
+      "description": "Bill of Materials for products",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "components": { "type": "array" }
+      }
+    },
+    "ProductRoll": {
+      "title": "Product Roll",
+      "description": "Finished product rolls tracking",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "qrCode": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "specification": { "type": "string" },
+        "length": { "type": "number" },
+        "weight": { "type": "number" },
+        "productionDate": { "type": "string" },
+        "productionOrderId": { "type": "string" },
+        "position": { "type": "object" },
+        "status": { "type": "string" },
+        "creator": { "type": "string" },
+        "scanHistory": { "type": "array" },
+        "orderId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "ShippingOrder": {
+      "title": "Shipping Order",
+      "description": "Lệnh xuất kho và giao hàng",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "orderId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerAddress": { "type": "string" },
+        "totalRolls": { "type": "number" },
+        "totalQuantity": { "type": "number" },
+        "status": { "type": "string" },
+        "assignedDriverId": { "type": "string" },
+        "assignedVehicle": { "type": "string" },
+        "deliveryDeadline": { "type": "string" },
+        "shippedAt": { "type": "string" },
+        "deliveredAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "ShippingOrderItem": {
+      "title": "Shipping Order Item",
+      "description": "Rolls assigned to a shipping order",
+      "type": "object",
+      "properties": {
+        "shippingOrderId": { "type": "string" },
+        "rollId": { "type": "string" },
+        "qrCode": { "type": "string" },
+        "productName": { "type": "string" },
+        "specification": { "type": "string" },
+        "status": { "type": "string" }
+      }
+    },
+    "DeliveryLog": {
+      "title": "Delivery Log",
+      "description": "Real-time logs for delivery progress",
+      "type": "object",
+      "properties": {
+        "shippingOrderId": { "type": "string" },
+        "driverId": { "type": "string" },
+        "action": { "type": "string" },
+        "note": { "type": "string" },
+        "location": { "type": "object" },
+        "imageUrl": { "type": "string" },
+        "signatureUrl": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "InventoryCheck": {
+      "title": "Inventory Check",
+      "description": "Stock audit records",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "operator": { "type": "string" },
+        "results": { "type": "array" },
+        "notes": { "type": "string" }
+      }
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order for shockproof wrap rolls",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string" },
+        "customerId": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "quantity": { "type": "number" },
+        "pricePerRoll": { "type": "number" },
+        "totalRevenue": { "type": "number" },
+        "totalCost": { "type": "number" },
+        "profit": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "ready_to_print", "shipping", "completed", "rejected"] },
+        "scannedQuantity": { "type": "number" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "approvedBy": { "type": "string" },
+        "driverId": { "type": "string" }
+      },
+      "required": ["customerName", "quantity", "status", "createdAt"]
+    },
+    "DriverSession": {
+      "title": "Driver Session",
+      "description": "Daily session for drivers tracking distance and status",
+      "type": "object",
+      "properties": {
+        "driverId": { "type": "string" },
+        "status": { "type": "string", "enum": ["online", "offline"] },
+        "totalKm": { "type": "number" },
+        "lastLocation": { 
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+          }
+        }
+      }
+    },
+    "FuelLog": {
+      "title": "Fuel Log",
+      "description": "Fuel expenses logged by drivers",
+      "type": "object",
+      "properties": {
+        "driverId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "videoUrl": { "type": "string" }
+      }
+    },
+    "ProductionLog": {
+      "title": "Production Log",
+      "description": "Logs for production activities",
+      "type": "object",
+      "properties": {
+        "rollId": { "type": "string" },
+        "materialId": { "type": "string" },
+        "materialUsed": { "type": "number" },
+        "laborCost": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "operatorId": { "type": "string" }
+      }
+    },
+    "GpsLog": {
+      "title": "GPS Log",
+      "description": "Real-time location logs for drivers",
+      "type": "object",
+      "properties": {
+        "driverId": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ProductionOrder": {
+      "title": "Production Order",
+      "description": "Specific orders for the production floor",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "productionDate": { "type": "string", "format": "date-time" },
+        "creatorId": { "type": "string" },
+        "creatorName": { "type": "string" },
+        "personInChargeName": { "type": "string" },
+        "requiredQuantity": { "type": "number" },
+        "specs": { "type": "string" },
+        "status": { "type": "string", "enum": ["waiting_material", "ready", "producing", "completed", "cancelled"] },
+        "targetRolls": { "type": "number" },
+        "machineArea": { "type": "string" },
+        "notes": { "type": "string" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "orderId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "requiredQuantity", "specs", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and permissions"
+    },
+    "/user_login_logs/{id}": {
+      "schema": "UserLoginLog",
+      "description": "History of user logins"
+    },
+    "/user_activity_logs/{id}": {
+      "schema": "UserActivityLog",
+      "description": "History of user actions"
+    },
+    "/drivers/{driverId}": {
+      "schema": "Driver",
+      "description": "Driver profiles and statuses"
+    },
+    "/vehicles/{vehicleId}": {
+      "schema": "Vehicle",
+      "description": "Vehicle fleet details"
+    },
+    "/fuel_logs/{logId}": {
+      "schema": "FuelLog",
+      "description": "Historical records of fuel purchases"
+    },
+    "/vehicle_maintenances/{id}": {
+      "schema": "VehicleMaintenance",
+      "description": "Vehicle maintenance and repair logs"
+    },
+    "/materials/{materialId}": {
+      "schema": "Material",
+      "description": "Inventory of raw materials"
+    },
+    "/material_transactions/{id}": {
+      "schema": "MaterialTransaction",
+      "description": "Import/Export history for materials"
+    },
+    "/material_bom/{id}": {
+      "schema": "MaterialBOM",
+      "description": "Bill of materials for products"
+    },
+    "/product_rolls/{rollId}": {
+      "schema": "ProductRoll",
+      "description": "Individual production rolls identified by QR code"
+    },
+    "/inventory_checks/{id}": {
+      "schema": "InventoryCheck",
+      "description": "Records of inventory audits"
+    },
+    "/shipping_orders/{id}": {
+      "schema": "ShippingOrder",
+      "description": "Shipping management records"
+    },
+    "/shipping_order_items/{id}": {
+      "schema": "ShippingOrderItem",
+      "description": "Items associated with shipping orders"
+    },
+    "/delivery_logs/{id}": {
+      "schema": "DeliveryLog",
+      "description": "Detailed logs of delivery activities"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders and their lifecycle"
+    },
+    "/driver_sessions/{sessionId}": {
+      "schema": "DriverSession",
+      "description": "Real-time driver tracking and sessions"
+    },
+    "/fuel_logs/{logId}": {
+      "schema": "FuelLog",
+      "description": "Fuel expense records"
+    },
+    "/production_logs/{logId}": {
+      "schema": "ProductionLog",
+      "description": "Detailed logs of production activities"
+    },
+    "/gps_logs/{logId}": {
+      "schema": "GpsLog",
+      "description": "Historical GPS tracking data"
+    },
+    "/production_orders/{orderId}": {
+      "schema": "ProductionOrder",
+      "description": "Lệnh sản xuất module records"
+    }
+  }
+}

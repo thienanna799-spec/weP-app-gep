@@ -1,0 +1,24 @@
+{
+  "name": "gep-automation",
+  "version": "1.0.0",
+  "description": "Automated Engineering Memory Pipeline — GEP ERP AI OS",
+  "type": "module",
+  "scripts": {
+    "watch": "tsx change-detector.ts",
+    "post-task": "tsx post-task-hook.ts",
+    "write-event": "tsx memory-writer.ts"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.15.6",
+    "typescript": "^5.4.5"
+  },
+  "usage": {
+    "after_bug_fix": "npm run post-task -- --type=BUG_FIX --title='fix inventory crash' --domains=inventory --files=app/server/src/controllers/inventory.ts --why='null check missing' --solution='added null guard' --severity=HIGH",
+    "after_feature": "npm run post-task -- --type=FEATURE --title='Add PDF export' --domains=finance --files=app/server/src/controllers/invoice.ts --why='user requested' --solution='added pdf generation' --severity=MEDIUM",
+    "after_schema_change": "npm run post-task -- --type=SCHEMA --title='Add returnDeadline to Order' --domains=orders --files=server/prisma/schema.prisma --why='business requirement' --solution='added DateTime field' --severity=HIGH"
+  }
+}

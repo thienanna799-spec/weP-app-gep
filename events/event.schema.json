@@ -1,0 +1,89 @@
+{
+  "$schema": "GEP Engineering Event Schema v2.0",
+  "description": "Event-Sourced Engineering Memory. Every significant engineering event MUST conform to this structure. Low-quality events = garbage memory = AI hallucination.",
+
+  "required_fields": [
+    "event_id", "timestamp", "type", "severity",
+    "title", "why", "solution", "root_cause",
+    "blast_radius", "affected_files", "affected_domains"
+  ],
+
+  "field_definitions": {
+    "event_id": "YYYY-MM-DD-NNN. Unique per day. Sequential.",
+    "timestamp": "ISO 8601 UTC",
+    "type": "BUG_FIX | FEATURE | SCHEMA | REFACTOR | CONFIG | ARCH_DECISION | INCIDENT",
+
+    "severity": {
+      "description": "Failure memory weight — AI weights reasoning toward high-severity zones",
+      "values": {
+        "CRITICAL": { "weight": 1.0, "trigger": "Financial inconsistency, data loss, auth bypass, production down" },
+        "HIGH":     { "weight": 0.9, "trigger": "Data encoding corruption, DB schema mismatch, API contract break, feature broken for all users" },
+        "MEDIUM":   { "weight": 0.6, "trigger": "Runtime crash, proxy failure, feature broken for some users" },
+        "LOW":      { "weight": 0.3, "trigger": "UI bug, non-critical config tweak" },
+        "INFO":     { "weight": 0.1, "trigger": "Docs update, ADR record, refactor with no behavior change" }
+      }
+    },
+
+    "why": "ROOT CAUSE narrative — WHY this happened, not just WHAT. This is the most important field. Bad example: 'bug in code'. Good example: 'Node.js >=17 changed DNS resolution to prefer IPv6, but backend bound to IPv4 only'.",
+
+    "root_cause": "One-sentence technical summary of the root cause (for indexing/search)",
+
+    "solution": "What was changed to fix it — specific and actionable",
+
+    "blast_radius": {
+      "description": "What other parts of the system could be affected. Used for impact analysis.",
+      "examples": ["frontend-api-communication", "inventory-stock-calculation", "order-status-transitions", "finance-reconciliation"]
+    },
+
+    "affected_files": "Relative paths from workspace root",
+
+    "affected_nodes": "Graph node IDs (FunctionNode, ClassNode, APINode, DBTableNode names)",
+
+    "affected_domains": {
+      "valid": ["finance", "inventory", "orders", "shipping", "drivers", "procurement", "production", "auth", "infra", "reporting"]
+    },
+
+    "related_adr": "Array of ADR filenames. Links decision records to incidents.",
+
+    "caused_by": "Array of event_ids that triggered or contributed to this event (causal chain)",
+
+    "related_incidents": "Array of event_ids in the same failure cluster",
+
+    "data_loss": "boolean — true if event caused any data deletion or corruption",
+
+    "prevention": "How to prevent this from happening again — actionable rule",
+
+    "rollback_strategy": "Mandatory if affecting finance, inventory, or orders domains. How to revert the system state if this fix fails in production.",
+    
+    "governance_approval": "boolean — true if the task passed strict governance checks (mandatory for critical domains).",
+
+    "workspace_id": "Must match workspace.config.json workspace_id",
+    "git_commit": "Short git hash at time of fix. 'no-git' if not tracked."
+  },
+
+  "quality_checklist": {
+    "GOOD_EVENT": [
+      "why field explains the non-obvious root cause",
+      "blast_radius lists real downstream risks",
+      "prevention has a concrete actionable rule",
+      "affected_files are specific paths, not vague descriptions",
+      "severity reflects actual business impact"
+    ],
+    "BAD_EVENT_ANTI_PATTERNS": [
+      "title: 'fix bug' — too vague, not searchable",
+      "why: 'there was an error' — no information",
+      "blast_radius: [] — always fill this",
+      "prevention: missing — means we'll repeat this",
+      "severity: CRITICAL for every event — cry wolf, loses signal"
+    ]
+  },
+
+  "retention_policy": {
+    "CRITICAL": "Keep forever",
+    "HIGH": "Keep forever",
+    "MEDIUM": "Archive after 1 year",
+    "LOW": "Archive after 6 months",
+    "INFO": "Archive after 3 months",
+    "archive_location": "events/archive/YYYY/"
+  }
+}

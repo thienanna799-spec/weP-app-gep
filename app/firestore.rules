@@ -1,0 +1,222 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSuperAdmin() {
+      return (request.auth != null && request.auth.token.email == "bachsydonggiphn@gmail.com" && request.auth.token.email_verified == true) || 
+             (request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin');
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSuperAdmin() || (request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'admin');
+    }
+
+    function isStaff() {
+      return isAdmin() || (request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'staff');
+    }
+
+    function isDriver() {
+      return isStaff() || (request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'driver');
+    }
+
+    function isActive() {
+      return isSuperAdmin() || (request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().status == 'active');
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // ===============================================================
+    // Validation Helpers
+    // ===============================================================
+
+    function isValidMaterial(data) {
+      return data.code is string && data.code.size() > 0 &&
+             data.name is string && data.name.size() > 0 &&
+             data.group is string && data.unit is string &&
+             data.currentStock is number &&
+             (!('minStock' in data) || data.minStock is number) &&
+             (!('purchasePrice' in data) || data.purchasePrice is number);
+    }
+
+    function isValidOrder(data) {
+      return data.code is string && data.code.size() > 0 &&
+             data.customerName is string && data.customerName.size() > 0 &&
+             data.status in ['nháp', 'chờ duyệt', 'đã duyệt', 'từ chối', 'đang chuẩn bị hàng', 'chờ xuất kho', 'đang giao', 'hoàn thành', 'hủy'] &&
+             data.priority in ['thấp', 'trung bình', 'cao', 'khẩn cấp'] &&
+             data.quantity is number;
+    }
+
+    function isValidProductRoll(data) {
+      return data.qrCode is string && data.qrCode.size() > 0 &&
+             data.status is string &&
+             data.weight is number &&
+             data.length is number &&
+             (!('orderId' in data) || data.orderId is string || data.orderId == null);
+    }
+
+    function isValidShippingOrder(data) {
+      return data.code is string && data.code.size() > 0 &&
+             data.status is string &&
+             data.totalRolls is number;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // --- Users ---
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId && 
+                    incoming().role == 'pending' && 
+                    incoming().status == 'active';
+      allow update: if isSuperAdmin();
+    }
+
+    match /user_login_logs/{id} {
+      allow read: if isSuperAdmin();
+      allow create: if isSignedIn(); // System logs on login
+    }
+
+    match /user_activity_logs/{id} {
+      allow read: if isSuperAdmin();
+      allow create: if isSignedIn(); // System logs on action
+    }
+
+    // --- Drivers & Vehicles ---
+    match /drivers/{driverId} {
+      allow read: if isStaff();
+      allow create, update: if isAdmin();
+    }
+
+    match /vehicles/{vehicleId} {
+      allow read: if isStaff();
+      allow create, update: if isAdmin();
+    }
+
+    match /fuel_logs/{id} {
+      allow read: if isStaff();
+      allow create: if isSignedIn() && (incoming().driverId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+    }
+
+    match /vehicle_maintenances/{id} {
+      allow read: if isStaff();
+      allow create, update: if isAdmin();
+    }
+
+    match /gps_logs/{id} {
+      allow read: if isStaff();
+      allow create: if isSignedIn() && (incoming().driverId == request.auth.uid);
+    }
+
+    // --- Materials ---
+    match /materials/{id} {
+      allow read: if isActive();
+      allow create, update: if isAdmin() && isValidMaterial(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /material_transactions/{id} {
+      allow read: if isActive();
+      allow create: if isStaff() && isActive();
+    }
+
+    match /material_bom/{id} {
+      allow read: if isActive();
+      allow write: if isAdmin();
+    }
+
+    // --- Product Inventory ---
+    match /product_rolls/{rollId} {
+      allow read: if isActive();
+      allow create, update: if isStaff() && isActive() && isValidProductRoll(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /inventory_checks/{id} {
+      allow read: if isActive();
+      allow create: if isStaff() && isActive();
+    }
+
+    // --- Orders & Shipping ---
+    match /orders/{orderId} {
+      allow read: if isActive();
+      allow create: if isStaff() && isActive() && isValidOrder(incoming());
+      allow update: if isActive() && (
+        isAdmin() ||
+        (isStaff() && existing().status == 'chờ duyệt' && incoming().status in ['chờ duyệt', 'nháp', 'đã duyệt']) ||
+        (isStaff() && existing().status == 'đã duyệt' && incoming().status in ['đang chuẩn bị hàng', 'chờ xuất kho']) ||
+        (isStaff() && incoming().status == 'hủy')
+      );
+    }
+
+    match /order_items/{id} {
+      allow read: if isActive();
+      allow create, update: if isStaff() && isActive();
+      allow delete: if isAdmin();
+    }
+
+    match /order_logs/{id} {
+      allow read: if isActive();
+      allow create: if isSignedIn() && isActive();
+    }
+
+    match /production_orders/{orderId} {
+      allow read: if isActive();
+      allow write: if isStaff() && isActive();
+    }
+
+    match /shipping_orders/{id} {
+      allow read: if isActive();
+      allow create: if isStaff() && isActive();
+      allow update: if (isStaff() || isDriver()) && isActive();
+    }
+
+    match /shipping_order_items/{id} {
+      allow read: if isActive();
+      allow create, update: if isStaff() && isActive();
+    }
+
+    match /delivery_logs/{id} {
+      allow read: if isActive();
+      allow create: if isDriver() && isActive();
+    }
+
+    // --- Legacy / Driver tracking (keeping for compatibility) ---
+    match /driver_sessions/{sessionId} {
+      allow read, write: if isDriver() && isActive();
+    }
+  }
+}

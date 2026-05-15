@@ -1,0 +1,17 @@
+{
+  "event_id": "EVT-2026-05-13-010",
+  "timestamp": "2026-05-13T12:54:00Z",
+  "type": "INCIDENT_FIX",
+  "severity": "HIGH",
+  "title": "Docker Orphan Container Conflict When Moving SSD to New PC",
+  "affected_domains": ["infrastructure", "devops", "startup"],
+  "affected_files": ["startup.bat"],
+  "affected_nodes": ["startup.bat"],
+  "caused_by": [],
+  "related_incidents": ["EVT-2026-05-13-011"],
+  "root_cause": "When SSD is moved to a different PC, Docker Desktop on the new machine retains stale container metadata (orphan containers) from previous sessions. docker-compose up -d fails with 'Conflict: container name already in use' because the container name '/bocchongsoc_db' was registered but not running. Docker does not auto-clean orphan containers on new hosts.",
+  "resolution": "Added 'docker rm -f bocchongsoc_db bocchongsoc_memgraph bocchongsoc_chroma' BEFORE 'docker-compose up -d' in startup.bat. The -f flag ensures the command never fails even if containers don't exist. Also added ERRORLEVEL guard for backup step to skip and not create empty .sql files when container is not yet healthy.",
+  "prevention": "Always run 'docker rm -f <container_names>' before 'docker-compose up -d' in startup scripts designed for SSD portability. This is idempotent — safe to run even on first boot.",
+  "blast_radius": "LOW — only affects startup sequence. Application data is safe in Docker volume on SSD.",
+  "adr_reference": "None"
+}

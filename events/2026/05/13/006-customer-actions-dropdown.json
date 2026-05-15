@@ -1,0 +1,14 @@
+{
+  "event_id": "EVT-2026-05-13-006",
+  "timestamp": "2026-05-13T04:48:00Z",
+  "type": "UI_REFACTOR",
+  "severity": "LOW",
+  "title": "Consolidated Customer Actions into Split Button Dropdown",
+  "affected_domains": ["ui", "customers"],
+  "affected_nodes": ["app/src/modules/customers/page.tsx"],
+  "caused_by": [],
+  "related_incidents": [],
+  "root_cause": "User requested cleaning up the top right action bar by moving secondary actions into a dropdown menu.",
+  "resolution": "Implemented a Split Button dropdown for the 'Thêm khách hàng' primary button. Moved 'Nhập KH', 'Nhập Giá', 'Xuất Giá', 'Xuất CSV' into this dropdown menu.",
+  "adr_reference": "None"
+}

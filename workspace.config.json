@@ -1,0 +1,13 @@
+{
+  "workspace_id": "gep-erp-master",
+  "project_name": "GEP ERP",
+  "canonical_root": "./",
+  "graph_target": "./app/",
+  "engineering_memory": "./ENGINEERING_LOG.md",
+  "event_stream": "./events/",
+  "rules_file": "./.cursorrules",
+  "graph_enabled": true,
+  "vector_enabled": true,
+  "hydration_strategy": "incremental",
+  "note": "This file is the Workspace Identity anchor. Do NOT hardcode absolute paths anywhere in .cursorrules or AI rules. Always resolve paths relative to this file's location."
+}

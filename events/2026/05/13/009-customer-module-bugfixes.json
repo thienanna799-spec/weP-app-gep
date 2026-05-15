@@ -1,0 +1,30 @@
+{
+  "event_id": "EVT-2026-05-13-009",
+  "timestamp": "2026-05-13T15:37:00+07:00",
+  "domain": "customer_management",
+  "action": "UI Density Optimization & ID Auto-increment Fixes",
+  "actor": "antigravity",
+  "changes": [
+    {
+      "file": "app/src/modules/customers/components/CustomerTable.tsx",
+      "description": "Enforced strict 1-line truncation and uniform height for all rows. Moved Price column next to Phone column."
+    },
+    {
+      "file": "app/src/modules/customers/components/CustomerBasicInfo.tsx",
+      "description": "Added Customer Code (Mã KH) field to Edit form. Locked the field to be read-only to prevent manual overrides."
+    },
+    {
+      "file": "app/server/src/controllers/customers.controller.ts",
+      "description": "Fixed Customer Code generation to find highest CUS code and auto-increment. Allowed backend to accept update requests but protected empty code deletion."
+    },
+    {
+      "file": "app/server/src/services/excel.service.ts",
+      "description": "Updated Excel bulk import to auto-generate sequential CUS codes for rows with empty codes."
+    },
+    {
+      "file": "app/package.json",
+      "description": "Added 'watch' flag to backend dev script to ensure hot-reloading for tsx."
+    }
+  ],
+  "status": "COMPLETED"
+}

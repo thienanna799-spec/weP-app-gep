@@ -1,0 +1,12 @@
+{
+  "id": "DEC-2026-05-11-001",
+  "type": "ARCHITECTURAL_DECISION",
+  "title": "AI Code Intelligence OS Graph Engine Architecture",
+  "confidence": 0.95,
+  "recurrence_count": 1,
+  "domain_impact": ["graph-engine", "infra", "automation"],
+  "governance_weight": "HIGH",
+  "content": "System shifted from simple Chat AI to an 'AI Code Intelligence OS'. Core uses Memgraph (Platform edition, port 7444 for Lab UI) as Nervous System and ChromaDB as Vector Semantic Memory. Graph ingestion MUST follow a 3-Phase Incremental Hydration Strategy to prevent 'Graph Noise Explosion'.",
+  "source_session": "3f309286-ba3a-4493-b539-148a7a474e28",
+  "last_seen": "2026-05-11T12:07:33.000Z"
+}

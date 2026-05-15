@@ -1,0 +1,6 @@
+
+
+echo "============================================"
+echo "    GEP ERP - Governance Gate"
+echo "============================================"
+npx tsx ai/automation/governance-validator.ts

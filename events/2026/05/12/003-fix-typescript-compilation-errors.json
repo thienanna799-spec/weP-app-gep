@@ -1,0 +1,33 @@
+{
+  "event_id": "2026-05-12-003",
+  "timestamp": "2026-05-12T07:10:48.641Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "no-git",
+  "type": "BUG_FIX",
+  "severity": "0.2",
+  "title": "Fix TypeScript Compilation Errors",
+  "why": "Residual TypeScript errors were causing build warnings and masking potential future issues",
+  "root_cause": "Residual TypeScript errors were causing build warnings and masking potential future issues",
+  "solution": "Fixed missing Button import, configured @types/chokidar, fixed logger type mismatches in gateway and dependency sensor, corrected Google Vision namespace export",
+  "blast_radius": [
+    "frontend-backend-communication",
+    "all-api-calls",
+    "realtime-socket-events"
+  ],
+  "affected_files": [
+    "page.tsx",
+    " change-detector.ts",
+    " gateway.ts",
+    " dependency-graph.ts",
+    " googleVision.provider.ts"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "general",
+    "infra"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "data_loss": false,
+  "related_adr": []
+}

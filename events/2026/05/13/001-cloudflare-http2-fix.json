@@ -1,0 +1,14 @@
+{
+  "event_id": "EVT-2026-05-13-001",
+  "timestamp": "2026-05-13T03:21:00Z",
+  "type": "INFRA_FIX",
+  "severity": "MEDIUM",
+  "title": "Fixed Cloudflare Tunnel QUIC Timeout",
+  "affected_domains": ["infrastructure", "networking"],
+  "affected_nodes": ["startup.bat"],
+  "caused_by": [],
+  "related_incidents": ["INC-cloudflare-timeout"],
+  "root_cause": "Windows aggressively drops idle UDP packets, causing Cloudflare's default QUIC protocol to endlessly timeout and reconnect.",
+  "resolution": "Forced --protocol http2 in startup.bat to use TCP instead of UDP for the tunnel.",
+  "adr_reference": "None"
+}

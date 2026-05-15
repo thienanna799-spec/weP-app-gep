@@ -1,0 +1,32 @@
+{
+  "event_id": "2026-05-12-003",
+  "timestamp": "2026-05-12T07:22:39.041Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "no-git",
+  "type": "REFACTOR",
+  "severity": "0.5",
+  "title": "Frontend Component Decomposition (Phase 3 Batch 3)",
+  "why": "Customers module components were exceeding 250 LOC, violating architectural constraints and degrading maintainability",
+  "root_cause": "Customers module components were exceeding 250 LOC, violating architectural constraints and degrading maintainability",
+  "solution": "Extracted PendingPricingList, CustomerBasicInfo from CustomerForm. Extracted CustomerImportDropzone, CustomerImportPreviewTable from CustomerExcelImport. Extracted PricingTable from PricingSection.",
+  "blast_radius": [],
+  "affected_files": [
+    "CustomerForm.tsx",
+    " PendingPricingList.tsx",
+    " CustomerBasicInfo.tsx",
+    " CustomerExcelImport.tsx",
+    " CustomerImportDropzone.tsx",
+    " CustomerImportPreviewTable.tsx",
+    " PricingSection.tsx",
+    " PricingTable.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "general",
+    "customers"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "data_loss": false,
+  "related_adr": []
+}

@@ -1,0 +1,12 @@
+{
+  "id": "INV-2026-05-11-001",
+  "type": "INVARIANT",
+  "title": "Incremental Hydration Safety Gate",
+  "confidence": 0.99,
+  "recurrence_count": 2,
+  "domain_impact": ["graph-engine", "AST"],
+  "governance_weight": "CRITICAL",
+  "content": "NEVER run full codebase graph ingestion in a single pass. Direct full scan causes 'Graph Noise Explosion' (useless utility files clogging the network) and 'Vector Pollution'. Always use targeted Dry-Run parsing (e.g., --target=order) to verify Edge linkage before committing to DB.",
+  "source_session": "3f309286-ba3a-4493-b539-148a7a474e28",
+  "last_seen": "2026-05-11T12:05:53.000Z"
+}

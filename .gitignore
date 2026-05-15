@@ -1,0 +1,5 @@
+node_modules/
+installers/DockerDesktop.exe
+portable/docker_images/mysql_8.0.tar
+app/.git_backup/
+mysql_data/

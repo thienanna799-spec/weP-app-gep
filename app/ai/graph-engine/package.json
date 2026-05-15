@@ -1,0 +1,27 @@
+{
+  "name": "gep-graph-engine",
+  "version": "1.0.0",
+  "description": "AI Code Intelligence OS (v3.2)",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "hydrate": "tsx src/hydrate.ts",
+    "annotate": "tsx src/annotate_domains.ts",
+    "embed": "tsx src/embed_gating.ts",
+    "ask": "tsx src/ask.ts"
+  },
+  "dependencies": {
+    "@xenova/transformers": "^2.17.1",
+    "chokidar": "^3.6.0",
+    "chromadb": "^1.8.1",
+    "neo4j-driver": "^5.20.0",
+    "ts-morph": "^22.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.15.6",
+    "typescript": "^5.4.5"
+  }
+}

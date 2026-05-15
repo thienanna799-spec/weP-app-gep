@@ -1,0 +1,36 @@
+{
+  "event_id": "2026-05-12-001",
+  "timestamp": "2026-05-12T04:51:29.268Z",
+  "workspace_id": "unknown",
+  "git_commit": "no-git",
+  "type": "refactor",
+  "severity": "0.6",
+  "title": "Phase 1: Backend Controllers Splitting",
+  "why": "Fat controllers violated Single Responsibility Principle",
+  "root_cause": "Fat controllers violated Single Responsibility Principle",
+  "solution": "Split drivers into 5 sub-controllers and orders into 3 sub-controllers",
+  "blast_radius": [
+    "order-status-machine",
+    "inventory-reservation",
+    "shipping-creation",
+    "payment-trigger",
+    "shift-management",
+    "vehicle-assignment",
+    "gps-tracking",
+    "ocr-audit"
+  ],
+  "affected_files": [
+    "drivers.controller.ts",
+    " orders.controller.ts",
+    " router.ts"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "orders",
+    "drivers"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "data_loss": false,
+  "related_adr": []
+}

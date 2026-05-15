@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: bocchongsoc_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: matkhau
+      MYSQL_DATABASE: bocchongsoc
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: matkhau
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-uroot', '-pmatkhau']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  graph-db:
+    image: memgraph/memgraph-platform:latest
+    container_name: gep_memgraph
+    restart: unless-stopped
+    ports:
+      - "7687:7687" # Bolt Protocol
+      - "7444:3000" # Memgraph Lab UI
+      - "9091:9091" # Logs
+    volumes:
+      - memgraph_lib:/var/lib/memgraph
+      - memgraph_log:/var/log/memgraph
+
+  vector-db:
+    image: chromadb/chroma:latest
+    container_name: gep_chroma
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
+volumes:
+  memgraph_lib:
+  memgraph_log:
+  chroma_data:

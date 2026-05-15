@@ -1,0 +1,25 @@
+{
+  "event_id": "2026-05-12-004",
+  "timestamp": "2026-05-12T08:11:58.139Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "no-git",
+  "type": "BUGFIX",
+  "severity": "0.6",
+  "title": "Fixed Recharts Blank Canvas on Zoom",
+  "why": "When maximizing charts, Recharts ResponsiveContainer rendered an empty canvas due to duplicate DOM ID collisions and ResizeObserver animation desyncs.",
+  "root_cause": "When maximizing charts, Recharts ResponsiveContainer rendered an empty canvas due to duplicate DOM ID collisions and ResizeObserver animation desyncs.",
+  "solution": "Unmounted the background chart instance when the ChartZoom modal is open, forcing a fresh mount inside the modal.",
+  "blast_radius": [],
+  "affected_files": [
+    "ChartZoom.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "general",
+    "frontend"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "data_loss": false,
+  "related_adr": []
+}

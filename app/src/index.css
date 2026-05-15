@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@media print {
+  /* Hide everything in the body */
+  body * {
+    visibility: hidden !important;
+  }
+  /* Show only the QR print section and ALL its descendants */
+  #qr-print-section,
+  #qr-print-section *,
+  #qr-print-section svg,
+  #qr-print-section svg *,
+  #qr-print-section svg path,
+  #qr-print-section svg rect {
+    visibility: visible !important;
+  }
+  /* Position the QR section to fill the page */
+  #qr-print-section {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: white !important;
+    z-index: 99999 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  /* Hide buttons in print */
+  #qr-print-section button {
+    display: none !important;
+  }
+  /* Make QR code bigger and cleaner for print */
+  #qr-print-section > div:first-child {
+    border-width: 3px !important;
+    border-color: #000 !important;
+    box-shadow: none !important;
+    padding: 20px !important;
+  }
+  /* Ensure SVG is displayed properly */
+  #qr-print-section svg {
+    display: block !important;
+    width: 250px !important;
+    height: 250px !important;
+  }
+}

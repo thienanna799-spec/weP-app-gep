@@ -1,0 +1,4 @@
+# OpenClaw logs directory
+# This directory contains runtime logs. Do not commit log files.
+*.log
+*.json

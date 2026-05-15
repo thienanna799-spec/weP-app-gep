@@ -1,0 +1,14 @@
+{
+  "event_id": "EVT-2026-05-13-003",
+  "timestamp": "2026-05-13T03:50:00Z",
+  "type": "FEATURE_UPDATE",
+  "severity": "LOW",
+  "title": "Moved User Profile to Header",
+  "affected_domains": ["ui", "layout"],
+  "affected_nodes": ["Header.tsx", "Sidebar.tsx"],
+  "caused_by": [],
+  "related_incidents": [],
+  "root_cause": "User requested moving the user profile to the top right corner to save sidebar space.",
+  "resolution": "Removed User Footer from Sidebar.tsx. Added Name, Role, and Avatar layout to Header.tsx.",
+  "adr_reference": "None"
+}

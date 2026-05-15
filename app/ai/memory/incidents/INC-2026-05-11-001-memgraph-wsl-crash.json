@@ -1,0 +1,12 @@
+{
+  "id": "INC-2026-05-11-001",
+  "type": "INCIDENT_PATTERN",
+  "title": "Memgraph Core Dump / Segmentation Fault on Windows WSL",
+  "confidence": 0.98,
+  "recurrence_count": 1,
+  "domain_impact": ["docker", "memgraph", "database"],
+  "governance_weight": "CRITICAL",
+  "content": "Memgraph container (RocksDB engine) crashes immediately with 'core dumped' or segmentation fault when using Windows physical directory bind mounts (e.g. ./memgraph_lib:/var/lib/memgraph) due to WSL I/O permission conflicts. FIX: MUST use Docker Named Volumes (e.g. memgraph_lib:/var/lib/memgraph) instead of bind mounts.",
+  "source_session": "3f309286-ba3a-4493-b539-148a7a474e28",
+  "last_seen": "2026-05-11T12:04:20.000Z"
+}

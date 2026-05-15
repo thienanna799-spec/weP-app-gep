@@ -1,0 +1,184 @@
+[2026-05-11 11:29:47.105] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:29:49.331] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:29:51.077] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:29:52.817] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:29:54.768] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:29:57.701] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:30:02.049] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:30:12.919] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:30:26.868] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:30:57.106] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:31:56.569] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:33:05.082] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:34:14.826] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:35:23.149] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:36:31.186] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:37:40.835] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:38:49.096] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:39:56.964] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:41:06.462] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:42:14.433] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:43:22.722] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:44:32.204] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:45:41.079] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:46:54.014] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:48:02.335] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:49:11.064] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:50:19.726] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:51:29.517] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:52:37.861] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:53:47.461] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:54:56.816] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:56:06.445] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:57:15.943] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:58:25.897] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:59:29.881] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:59:41.004] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:59:42.638] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:59:44.097] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:59:45.818] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:59:48.448] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:59:52.560] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 11:59:59.970] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 12:00:17.008] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 12:00:47.017] [memgraph_log] [critical] 
+Assertion failed in file /home/mg/memgraph/src/storage/v2/durability/durability.cpp at line 112.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 12:01:37.309] [memgraph_log] [critical] 
+Assertion failed in file /memgraph/src/storage/v2/durability/durability.cpp at line 75.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'
+[2026-05-11 12:01:39.412] [memgraph_log] [critical] 
+Assertion failed in file /memgraph/src/storage/v2/durability/durability.cpp at line 75.
+	Expression: 'process_euid == directory_owner'
+	Message: 'The process is running as user memgraph, but the data directory is owned by user root. Please start the process as user root!'

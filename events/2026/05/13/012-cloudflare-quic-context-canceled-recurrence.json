@@ -1,0 +1,18 @@
+{
+  "event_id": "EVT-2026-05-13-012",
+  "timestamp": "2026-05-13T13:09:00Z",
+  "type": "INCIDENT_FIX",
+  "severity": "HIGH",
+  "title": "Cloudflare Tunnel QUIC Context Canceled — Recurrence of EVT-001 After SSD Move",
+  "affected_domains": ["infrastructure", "networking"],
+  "affected_files": ["startup.bat"],
+  "affected_nodes": ["startup.bat"],
+  "caused_by": ["EVT-2026-05-13-010"],
+  "related_incidents": ["EVT-2026-05-13-001"],
+  "root_cause": "startup.bat was using '--protocol auto' for the Cloudflare tunnel, which auto-selected QUIC (UDP). Cloudflare log confirmed 'protocol=quic' on all 4 connections. Windows aggressively drops idle UDP packets, causing 'Incoming request ended abruptly: context canceled' on ALL incoming HTTP requests through gepoder.click. This is a RECURRENCE of EVT-2026-05-13-001 — the fix was applied to the previous machine's startup.bat but the SSD copy still had '--protocol auto'. The fix was NOT preserved as an invariant.",
+  "resolution": "Changed '--protocol auto' to '--protocol http2' in startup.bat line 98. Killed old cloudflared.exe process and restarted tunnel with '--protocol http2'. HTTP/2 uses TCP which is stable on Windows.",
+  "prevention": "The '--protocol http2' setting MUST NEVER be changed back to 'auto' on Windows. Add a comment in startup.bat above the cloudflare command: ':: INVARIANT: Must use http2, NOT auto. Auto selects QUIC (UDP) which Windows drops. See EVT-001 and EVT-012.'",
+  "blast_radius": "HIGH — 100% of external traffic via gepoder.click was returning 'context canceled'. System inaccessible from public URL. Localhost still worked.",
+  "adr_reference": "None",
+  "pattern": "RECURRING_INCIDENT — Same root cause as EVT-2026-05-13-001. Indicates missing invariant enforcement in startup.bat."
+}

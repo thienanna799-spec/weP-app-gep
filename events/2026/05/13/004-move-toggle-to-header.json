@@ -1,0 +1,14 @@
+{
+  "event_id": "EVT-2026-05-13-004",
+  "timestamp": "2026-05-13T04:08:00Z",
+  "type": "FEATURE_UPDATE",
+  "severity": "LOW",
+  "title": "Moved Sidebar Toggle to Header",
+  "affected_domains": ["ui", "layout"],
+  "affected_nodes": ["Header.tsx", "Sidebar.tsx", "AppLayout.tsx"],
+  "caused_by": [],
+  "related_incidents": [],
+  "root_cause": "User requested moving the toggle button to save vertical space in the sidebar.",
+  "resolution": "Removed toggle button from Sidebar.tsx. Passed onToggleCollapse to Header.tsx and added a Menu icon to the left of the Header.",
+  "adr_reference": "None"
+}

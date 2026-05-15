@@ -1,0 +1,297 @@
+/**
+ * post-task-hook.ts — The Soul of the Memory Pipeline
+ * ──────────────────────────────────────────────────────
+ * Called AFTER every task completes (bug fix, feature, schema change).
+ * 
+ * Orchestrates the FULL AUTOMATIC LIFECYCLE:
+ * 1. Runs impact analysis
+ * 2. Writes structured event memory           → MEMORY_SYNCHRONIZED
+ * 3. Suggests ADR if architectural change
+ * 4. Triggers graph hydration                  → GRAPH_HYDRATED
+ * 5. Runs governance validation                → GOVERNANCE_VALIDATED
+ * 6. Marks task COMPLETE                       → COMPLETE
+ * 
+ * ⚡ ALL STEPS RUN AUTOMATICALLY — NO HUMAN APPROVAL NEEDED
+ * 
+ * Usage:
+ *   npm run post-task -- --type=BUG_FIX --title="fix inventory crash" ...
+ * 
+ * This is the bridge between "AI did something" → "System remembers it"
+ */
+
+import path from 'path';
+import fs from 'fs';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import { writeEvent, type MemoryEvent } from './memory-writer.js';
+import {
+  analyzeImpact,
+  executeDocCreation,
+  appendToSpiderWeb,
+  printAnalysisReport,
+} from './impact-analyzer.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PROJECT_ROOT = path.resolve(__dirname, '../../../');
+const DECISIONS_DIR = path.join(PROJECT_ROOT, 'app', 'ai', 'system', 'decisions');
+
+// ────────────────────────────────────────────────
+// BLAST RADIUS CALCULATOR
+// ────────────────────────────────────────────────
+const BLAST_RADIUS_MAP: Record<string, string[]> = {
+  finance:     ['finance-reconciliation', 'payment-api', 'invoice-generation', 'accounting-reports'],
+  inventory:   ['inventory-stock-calculation', 'product-roll-status', 'order-reservation', 'qr-scanner'],
+  orders:      ['order-status-machine', 'inventory-reservation', 'shipping-creation', 'payment-trigger'],
+  shipping:    ['driver-assignment', 'delivery-tracking', 'order-completion-flow'],
+  drivers:     ['shift-management', 'vehicle-assignment', 'gps-tracking', 'ocr-audit'],
+  procurement: ['material-stock', 'production-order-readiness'],
+  production:  ['product-roll-creation', 'inventory-addition'],
+  auth:        ['all-protected-routes', 'role-based-access', 'firebase-token-validation'],
+  infra:       ['frontend-backend-communication', 'all-api-calls', 'realtime-socket-events'],
+  schema:      ['prisma-enum-mapping', 'all-queries-touching-changed-model', 'graph-hydration-required'],
+};
+
+function calculateBlastRadius(domains: string[], affectedFiles: string[]): string[] {
+  const radius = new Set<string>();
+  
+  for (const domain of domains) {
+    (BLAST_RADIUS_MAP[domain] || []).forEach(r => radius.add(r));
+  }
+  
+  // Schema change = special blast radius
+  if (affectedFiles.some(f => f.includes('schema.prisma'))) {
+    (BLAST_RADIUS_MAP.schema || []).forEach(r => radius.add(r));
+  }
+  
+  return Array.from(radius);
+}
+
+// ────────────────────────────────────────────────
+// ADR SUGGESTION ENGINE
+// ────────────────────────────────────────────────
+const ARCHITECTURAL_TRIGGERS = [
+  { pattern: /schema\.prisma/i, reason: 'DB schema changed' },
+  { pattern: /vite\.config/i, reason: 'Build/proxy configuration changed' },
+  { pattern: /middleware/i, reason: 'Auth/middleware layer changed' },
+  { pattern: /prisma.*transaction|\$transaction/i, reason: 'Transaction boundary changed' },
+  { pattern: /socket\.io|io\.emit/i, reason: 'Real-time event protocol changed' },
+  { pattern: /routes\/index|router\.use/i, reason: 'API routing structure changed' },
+];
+
+function suggestADR(affectedFiles: string[], domains: string[]): string | null {
+  // Check if any file matches architectural trigger patterns
+  for (const { pattern, reason } of ARCHITECTURAL_TRIGGERS) {
+    if (affectedFiles.some(f => pattern.test(f))) {
+      return reason;
+    }
+  }
+  
+  // Finance/inventory core changes always warrant ADR consideration
+  if (domains.includes('finance') || domains.some(d => 
+    ['auth', 'infra'].includes(d)
+  )) {
+    return `Core ${domains[0]} domain behavior changed`;
+  }
+  
+  return null;
+}
+
+function getNextADRNumber(): number {
+  if (!fs.existsSync(DECISIONS_DIR)) return 16;
+  const adrFiles = fs.readdirSync(DECISIONS_DIR).filter(f => f.startsWith('ADR-'));
+  if (adrFiles.length === 0) return 16;
+  const numbers = adrFiles.map(f => parseInt(f.replace('ADR-', '').split('-')[0])).filter(n => !isNaN(n));
+  return Math.max(...numbers) + 1;
+}
+
+function generateADRDraft(adrNumber: number, title: string, domains: string[], why: string, solution: string): string {
+  const content = `# ADR-${String(adrNumber).padStart(3, '0')}: ${title}
+
+**Date:** ${new Date().toISOString().split('T')[0]}
+**Status:** DRAFT — Awaiting review
+**Domain:** ${domains.join(', ')}
+
+---
+
+## Context
+
+[Describe the situation that led to this decision]
+
+## Problem
+
+${why}
+
+## Decision
+
+${solution}
+
+## Consequences
+
+✅ [Positive outcomes]
+⚠️ [Trade-offs or risks]
+
+## Files Changed
+
+[List relevant files]
+
+---
+*Auto-generated by post-task-hook.ts — Edit to add full context*
+`;
+  const filename = `ADR-${String(adrNumber).padStart(3, '0')}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}.md`;
+  const filepath = path.join(DECISIONS_DIR, filename);
+  fs.mkdirSync(DECISIONS_DIR, { recursive: true });
+  fs.writeFileSync(filepath, content, 'utf-8');
+  return filename;
+}
+
+// ────────────────────────────────────────────────
+// GRAPH HYDRATION TRIGGER (INCREMENTAL)
+// ────────────────────────────────────────────────
+function triggerIncrementalHydration(eventPath: string): boolean {
+  const graphEnginePath = path.join(PROJECT_ROOT, 'app', 'ai', 'graph-engine');
+  console.log(`[PostTaskHook] 💧 Triggering incremental graph hydration...`);
+  try {
+    execSync(`npx tsx src/incremental-hydrate.ts "${eventPath}"`, {
+      cwd: graphEnginePath,
+      stdio: 'inherit',
+    });
+    console.log(`[PostTaskHook] ✅ GRAPH_HYDRATED`);
+    return true;
+  } catch (e) {
+    console.warn(`[PostTaskHook] ⚠️ Incremental hydration failed (non-blocking):`, e);
+    return false;
+  }
+}
+
+// ────────────────────────────────────────────────
+// GOVERNANCE VALIDATION (AUTOMATIC — NO HUMAN APPROVAL)
+// ────────────────────────────────────────────────
+function runGovernanceValidation(eventPath: string, domains: string[]): boolean {
+  console.log(`\n[GovernanceValidator] 🛡️  Running automatic governance validation...`);
+  
+  let eventData: any;
+  try {
+    eventData = JSON.parse(fs.readFileSync(eventPath, 'utf-8'));
+  } catch (e) {
+    console.error(`[GovernanceValidator] ❌ Cannot parse event: ${eventPath}`);
+    return false;
+  }
+
+  const errors: string[] = [];
+
+  // 1. Required fields
+  const requiredFields = ['why', 'root_cause', 'blast_radius', 'prevention'];
+  for (const field of requiredFields) {
+    const val = eventData[field];
+    if (!val) {
+      errors.push(`Missing required field: '${field}'`);
+    } else if (typeof val === 'string' && val.length < 15) {
+      errors.push(`Field '${field}' is too short (must be >= 15 chars)`);
+    }
+  }
+
+  // 2. Blast radius enforcement
+  if (!eventData.blast_radius || eventData.blast_radius.length === 0) {
+    errors.push(`'blast_radius' array cannot be empty`);
+  }
+
+  // 3. Critical domain checks
+  const isCritical = domains.some(d => ['finance', 'inventory', 'orders'].includes(d));
+  if (isCritical) {
+    if (!eventData.rollback_strategy || eventData.rollback_strategy.length < 15) {
+      errors.push(`Critical domain requires valid 'rollback_strategy'`);
+    }
+    if (eventData.governance_approval !== true) {
+      errors.push(`Critical domain requires 'governance_approval: true'`);
+    }
+  }
+
+  // 4. ENGINEERING_LOG synchronization
+  const logPath = path.join(PROJECT_ROOT, 'ENGINEERING_LOG.md');
+  if (fs.existsSync(logPath)) {
+    const logContent = fs.readFileSync(logPath, 'utf-8');
+    const titleSlug = (eventData.title || '').substring(0, 30);
+    if (!logContent.includes(eventData.event_id) && !logContent.includes(titleSlug)) {
+      errors.push(`ENGINEERING_LOG.md not synchronized with event ${eventData.event_id}`);
+    }
+  }
+
+  // Report
+  if (errors.length > 0) {
+    console.error(`[GovernanceValidator] ❌ FAILED (${errors.length} issues):`);
+    errors.forEach(err => console.error(`  - ${err}`));
+    console.error(`[GovernanceValidator] ⚠️  Fix the event file: ${eventPath}`);
+    return false;
+  }
+
+  console.log(`[GovernanceValidator] ✅ GOVERNANCE_VALIDATED`);
+  console.log(`  ✓ Required fields present`);
+  console.log(`  ✓ Blast radius: ${eventData.blast_radius.length} items`);
+  console.log(`  ✓ ENGINEERING_LOG: synchronized`);
+  if (isCritical) {
+    console.log(`  ✓ Critical domain: rollback_strategy + governance_approval OK`);
+  }
+  return true;
+}
+
+// ────────────────────────────────────────────────
+// MAIN POST-TASK HOOK
+// ────────────────────────────────────────────────
+export interface PostTaskInput {
+  type: MemoryEvent['type'];
+  title: string;
+  why: string;
+  root_cause: string;
+  solution: string;
+  affected_files: string[];
+  affected_domains: string[];
+  affected_nodes?: string[];
+  severity?: MemoryEvent['severity'];
+  caused_by?: string[];
+  related_incidents?: string[];
+  prevention?: string;
+  rollback_strategy?: string;
+  governance_approval?: boolean;
+  data_loss?: boolean;
+  data_loss_note?: string;
+  skip_hydration?: boolean;
+}
+
+export async function runPostTaskHook(input: PostTaskInput): Promise<{
+  event_path: string;
+  adr_created: string | null;
+  hydration_triggered: boolean;
+  governance_passed: boolean;
+  docs_created: string[];
+  impact_case: string;
+}> {
+  console.log(`\n[PostTaskHook] 🔄 Running memory pipeline for: "${input.title}"`);
+
+  // ── Step 1: Run Impact Analysis (3-case classification) ──
+  const analysis = analyzeImpact({
+    title: input.title,
+    type: input.type,
+    affectedFiles: input.affected_files,
+    affectedDomains: input.affected_domains,
+    why: input.why,
+    solution: input.solution,
+    severity: input.severity,
+  });
+
+  printAnalysisReport(analysis, input.title);
+
+  // ── Step 2: Calculate blast radius from analysis ──
+  const blast_radius = calculateBlastRadius(input.affected_domains, input.affected_files);
+
+  // ── Step 3: Write structured event (always) ──
+  const event: MemoryEvent = {
+    type: input.type,
+    severity: analysis.severity,
+    title: input.title,
+    why: input.why,
+    root_cause: input.root_cause,
+    solution: input.solution,
+    blast_radius,
+    affected_files: input.affected_files,
+    affected_nod

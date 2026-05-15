@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phiếu lấy hàng - {{pickingSlipNumber}}</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --brand-primary: #4a6fa5;
+      --brand-dark: #2c3e6b;
+      --brand-light: #b8cce4;
+      --brand-bg: #e8eef6;
+      --text-primary: #1a1a2e;
+      --text-secondary: #4a4a6a;
+      --text-muted: #8a8aa0;
+      --border-color: #c5d3e8;
+      --row-alt: #f0f4fa;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+      color: var(--text-primary);
+      background: #fff;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    /* ── A4 Landscape Page Container ──────────────────────────────── */
+    .invoice-page {
+      width: 297mm;
+      min-height: 210mm;
+      margin: 0 auto;
+      padding: 5mm 15mm 5mm;
+      background: #fff;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top Border Accent ──────────────────────────────── */
+    .invoice-page::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--brand-dark), var(--brand-primary));
+    }
+
+    /* ── Header Section ────────────────────────────────── */
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4mm;
+    }
+
+    .invoice-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--brand-dark);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .invoice-meta {
+      text-align: right;
+    }
+
+    .invoice-meta-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+
+    .invoice-meta-label {
+      color: var(--brand-primary);
+      font-weight: 700;
+      min-width: 50px;
+    }
+
+    .invoice-meta-value {
+      color: var(--text-primary);
+      font-weight: 600;
+      border-bottom: 1.5px solid var(--border-color);
+      min-width: 140px;
+      padding-bottom: 2px;
+    }
+
+    /* ── Company + Customer Row ─────────────────────────── */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12mm;
+      margin-bottom: 5mm;
+    }
+
+    .company-info {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .company-logo {
+      width: 350px;
+      height: 120px;
+      object-fit: contain;
+      object-position: left center;
+      margin-left: 90px;
+    }
+
+    .customer-info {
+      flex: 0 0 45%;
+    }
+
+    .customer-header {
+      background: var(--brand-bg);
+      color: var(--brand-dark);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 5px 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-left: 3px solid var(--brand-primary);
+      margin-bottom: 6px;
+    }
+
+    .customer-row {
+      display: flex;
+      margin-bottom: 3px;
+      font-size: 12px;
+      border-bottom: 1px solid #e8ecf2;
+      padding: 3px 0;
+    }
+
+    .customer-label {
+      color: var(--text-secondary);
+      font-weight: 600;
+      min-width: 80px;
+    }
+
+    .customer-value {
+      color: var(--text-primary);
+      font-weight: 500;
+      flex: 1;
+    }
+
+    /* ── Order Status Badge ─────────────────────────────── */
+    .status-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-shipping {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-delivered {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-pending {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    /* ── Products Table ─────────────────────────────────── */
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 4mm;
+      font-size: 12px;
+    }
+
+    .products-table thead th {
+      background: var(--brand-bg);
+      color: var(--brand-dark);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 10px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .products-table thead th:nth-child(2) {
+      text-align: left;
+    }
+
+    .products-table tbody td {
+      padding: 7px 10px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .products-table tbody td:nth-child(2) {
+      text-align: left;
+    }
+
+    .products-table tbody tr:nth-child(even) {
+      background: var(--row-alt);
+    }
+
+    .products-table tbody td.product-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* ── Notes ──────────────────────────────────────────── */
+    .notes-section {
+      margin-bottom: 5mm;
+      padding: 8px 12px;
+      background: #fafbfd;
+      border-left: 3px solid var(--brand-light);
+      border-radius: 0 6px 6px 0;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .notes-label {
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    /* ── Signatures ─────────────────────────────────────── */
+    .signatures {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4mm;
+      padding-top: 0;
+    }
+
+    .signature-box {
+      text-align: center;
+      width: 30%;
+      margin-bottom: 20mm;
+    }
+
+    .signature-title {
+      font-weight: 700;
+      color: var(--brand-dark);
+      font-size: 12px;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .signature-line {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .invoice-footer {
+      text-align: center;
+      padding-top: 6mm;
+      border-top: 2px solid var(--brand-bg);
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+
+    .invoice-footer strong {
+      color: var(--brand-primary);
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        margin: 0;
+      }
+
+      .invoice-page {
+        margin: 0;
+        padding: 5mm 15mm 20mm;
+        width: 100%;
+        min-height: 100vh;
+        page-break-inside: avoid;
+        page-break-after: auto;
+      }
+
+      .invoice-footer {
+        position: fixed;
+        bottom: 0;
+        left: 15mm;
+        right: 15mm;
+        padding-bottom: 5mm;
+        background: white;
+      }
+
+      @page {
+        size: A4 landscape;
+        margin: 0;
+      }
+    }
+
+    /* ── Responsive (screen preview) ───────────────────── */
+    @media screen and (max-width: 800px) {
+      .invoice-page {
+        width: 100%;
+        padding: 6mm;
+        min-height: auto;
+      }
+
+      .info-row {
+        flex-direction: column;
+        gap: 4mm;
+      }
+
+      .signatures {
+        flex-direction: column;
+        gap: 8mm;
+        align-items: center;
+      }
+
+      .signature-box {
+        width: 80%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="invoice-page">
+    <!-- ── Header ──────────────────────────────────────── -->
+    <div class="invoice-header">
+      <div class="invoice-title">Picking Slip</div>
+      <div class="invoice-meta">
+        <div class="invoice-meta-row">
+          <span class="invoice-meta-label">Date</span>
+          <span class="invoice-meta-value">{{slipDate}}</span>
+        </div>
+        <div class="invoice-meta-row">
+          <span class="invoice-meta-label">No</span>
+          <span class="invoice-meta-value">{{pickingSlipNumber}}</span>
+        </div>
+        <div class="invoice-meta-row">
+          <span class="invoice-meta-label">Order</span>
+          <span class="invoice-meta-value">{{orderCode}}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Company + Customer ──────────────────────────── -->
+    <div class="info-row">
+      <div class="company-info">
+        <img src="{{companyLogo}}" alt="GEP Logo" class="company-logo" onerror="this.style.display='none'" />
+      </div>
+
+      <div class="customer-info">
+        <div class="customer-header">Customer</div>
+        <div class="customer-row">
+          <span class="customer-label">Name</span>
+          <span class="customer-value">{{customerName}}</span>
+        </div>
+        <div class="customer-row">
+          <span class="customer-label">Address</span>
+          <span class="customer-value">{{customerAddress}}</span>
+        </div>
+        <div class="customer-row">
+          <span class="customer-label">Phone</span>
+          <span class="customer-value">{{customerPhone}}</span>
+        </div>
+        <div class="customer-row">
+          <span class="customer-label">Status</span>
+          <span class="customer-value">
+            <span class="status-badge status-{{statusClass}}">{{statusLabel}}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Products Table (NO PRICE COLUMNS) ──────────── -->
+    <table class="products-table">
+      <thead>
+        <tr>
+          <th style="width:50px">No</th>
+          <th>Product Name</th>
+          <th style="width:60px">Pcs</th>
+          <th style="width:80px">Quantity</th>
+          <th style="width:70px">Unit</th>
+          <th style="width:150px">Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{itemRows}}
+      </tbody>
+    </table>
+
+    <!-- ── Notes ───────────────────────────────────────── -->
+    {{#notes}}
+    <div class="notes-section">
+      <div class="notes-label">Notes:</div>
+      <div>{{notes}}</div>
+    </div>
+    {{/notes}}
+
+    <!-- ── Signatures ──────────────────────────────────── -->
+    <div class="signatures">
+      <div class="signature-box">
+        <div class="signature-title">Received by</div>
+        <div class="signature-line">Ký, ghi rõ họ tên</div>
+      </div>
+      <div class="signature-box">
+        <div class="signature-title">Warehouse Staff</div>
+        <div class="signature-line">Ký, ghi rõ họ tên</div>
+      </div>
+      <div class="signature-box">
+        <div class="signature-title">Delivery Person</div>
+        <div class="signature-line">Ký, ghi rõ họ tên</div>
+      </div>
+    </div>
+
+    <!-- ── Footer ──────────────────────────────────────── -->
+    <div class="invoice-footer">
+      <strong>GEP Eco-Friendly Packaging</strong> · 275 Nguyễn Trãi, Thanh Xuân, Hà Nội · Tel: 08484847777
+    </div>
+  </div>
+</body>
+
+</html>
