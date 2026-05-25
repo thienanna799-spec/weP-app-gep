@@ -1,0 +1,38 @@
+{
+  "event_id": "2026-05-25-001",
+  "timestamp": "2026-05-25T15:10:00.000Z",
+  "workspace_id": "thienanna799-spec/weP-app-gep",
+  "git_commit": "latest",
+  "type": "HARDENING",
+  "severity": "HIGH",
+  "title": "ERP Security Hardening & Concurrency Stabilization",
+  "why": "System needed optimization for 5-6 years operational lifecycle and protection against interface tampering & race conditions",
+  "root_cause": "Unindexed database tables, unsafe concurrent order approval, absence of rate limiting, lack of automated daily backups, and exposed DevTools in frontend",
+  "solution": "Added schema indexes, implemented prisma.$transaction optimistic concurrency control, integrated express-rate-limit, built self-pruning daily database backups, removed node-fetch dependency, and integrated maximum frontend security guard with anti-debugger loop.",
+  "blast_radius": [],
+  "affected_files": [
+    "app/server/prisma/schema.prisma",
+    "app/server/src/controllers/orders/orders.status.controller.ts",
+    "app/server/src/lib/report-cache.ts",
+    "app/server/src/lib/backup-scheduler.ts",
+    "app/server/src/services/ocr.service.ts",
+    "app/server.ts",
+    "app/src/utils/security-guard.ts",
+    "app/src/main.tsx",
+    "auto_git_push.bat"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "security",
+    "database",
+    "backup",
+    "concurrency"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "Enforce optimistic concurrency control on crucial updates, implement rate limiting on open endpoints, block developer tools in production environments, and verify native node features over unlisted third-party imports.",
+  "rollback_strategy": "Git checkout/revert to pre-hardening commits",
+  "governance_approval": true,
+  "data_loss": false,
+  "related_adr": []
+}
