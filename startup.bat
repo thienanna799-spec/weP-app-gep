@@ -127,7 +127,7 @@ if not exist "node_modules\" (
 )
 start "AI Memory Watcher" cmd /k "npm run watch"
 
-:: Step 8: Start GEP Git Auto-Sync Service (Every 10 mins)
-echo [8/8] Starting Git Auto-Sync Daemon...
+:: Step 8: Start GEP Git Auto-Sync Service (Every 10 mins - Chạy ẩn dưới nền)
+echo [8/8] Starting Git Auto-Sync Daemon in background...
 cd /d "%PROJECT_DIR%"
-start "GEP Git Auto-Sync" cmd /k "%PROJECT_DIR%auto_git_push.bat"
+wscript.exe "%PROJECT_DIR%silent_git_push.vbs"
