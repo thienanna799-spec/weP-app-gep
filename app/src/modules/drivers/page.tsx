@@ -1,5 +1,6 @@
-import React from 'react';
-import { Users, Truck, Map as MapIcon, Fuel, BarChart3, Plus, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Users, Truck, Map as MapIcon, Fuel, BarChart3, Plus, Search, ScanSearch } from 'lucide-react';
 import Modal from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -20,6 +21,7 @@ import { AssignDriverModal } from './components/AssignDriverModal';
 import { DriverLocationMap } from './components/DriverLocationMap';
 import { DriverStatsTab } from './components/DriverStatsTab';
 import DriverLogsTab from './components/DriverLogsTab';
+import OcrAuditPage from '../ocr-audit/page';
 import { DRIVER_STATUS_LABELS } from './constants';
 
 const TABS = [
@@ -28,10 +30,16 @@ const TABS = [
   { id: 'map', label: 'Bản đồ', icon: MapIcon },
   { id: 'logs', label: 'Nhật ký', icon: Fuel },
   { id: 'stats', label: 'Báo cáo', icon: BarChart3 },
+  { id: 'ocr-audit', label: 'Kiểm toán AI', icon: ScanSearch },
 ] as const;
 
 const DriverTeamPage: React.FC = () => {
   const s = useDriverPageState();
+  const [headerPortal, setHeaderPortal] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setHeaderPortal(document.getElementById('page-header-portal'));
+  }, []);
 
   if (s.driversLoading || s.vehiclesLoading) {
     return (
@@ -41,26 +49,8 @@ const DriverTeamPage: React.FC = () => {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900">Đội ngũ Tài xế</h1>
-          <p className="text-sm text-slate-500">Quản lý tài xế, phương tiện và theo dõi vận hành.</p>
-        </div>
-        <div className="flex gap-2">
-          {s.activeTab === 'drivers' && (
-            <Button onClick={() => { s.setSelectedDriver(null); s.setIsDriverModalOpen(true); }} className="shadow-lg shadow-blue-500/20">
-              <Plus className="w-4 h-4 mr-2" /> Thêm tài xế
-            </Button>
-          )}
-        </div>
-      </div>
-
-      <DriverStatsCards stats={s.stats} />
-
-      {/* Tabs */}
+  const topControlBar = (
+    <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-1 bg-white p-1 rounded-2xl shadow-sm border border-slate-100 w-fit overflow-x-auto max-w-full">
         {TABS.map(tab => {
           const isActive = s.activeTab === tab.id;
@@ -93,6 +83,15 @@ const DriverTeamPage: React.FC = () => {
           );
         })}
       </div>
+
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      {headerPortal ? ReactDOM.createPortal(topControlBar, headerPortal) : topControlBar}
+
+      <DriverStatsCards stats={s.stats} />
 
       {/* Tab Content */}
       {s.activeTab === 'drivers' && (
@@ -139,6 +138,8 @@ const DriverTeamPage: React.FC = () => {
       {s.activeTab === 'stats' && (
         <DriverStatsTab drivers={s.drivers} stats={s.stats} totalVehicles={s.vehicles.length} fuelLogsCount={s.fuelLogs.length} maintenancesCount={s.maintenances.length} />
       )}
+
+      {s.activeTab === 'ocr-audit' && <OcrAuditPage />}
 
       {/* Modals */}
       <Modal isOpen={s.isDriverModalOpen} onClose={() => s.setIsDriverModalOpen(false)} title={s.selectedDriver ? 'Cập nhật tài xế' : 'Thêm tài xế mới'}>

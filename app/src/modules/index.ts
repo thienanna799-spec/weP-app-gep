@@ -13,5 +13,3 @@ export const DriversPage = lazy(() => import('./drivers/page'));
 export const FinancePage = lazy(() => import('./finance/page'));
 // Admin view is often special, but let's include it for completeness if needed
 export const AdminPage = lazy(() => import('./admin/page'));
-export const OcrAuditPage = lazy(() => import('./ocr-audit/page'));
-export const ProcurementPage = lazy(() => import('./procurement/page'));

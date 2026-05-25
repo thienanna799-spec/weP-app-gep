@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
+import { UserRole, UserStatus } from '../types/enums.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 
@@ -22,7 +23,7 @@ export const updateUserRole = asyncHandler(async (req: AuthRequest, res: Respons
   const { role } = req.body as { role: string };
   const user = await prisma.user.update({
     where: { uid: req.params.uid },
-    data: { role: role as any },
+    data: { role: role as UserRole },
   });
 
   // ── When admin approves role → driver, activate the Driver record ──
@@ -63,7 +64,7 @@ export const updateUserStatus = asyncHandler(async (req: AuthRequest, res: Respo
   const { status } = req.body as { status: string };
   const user = await prisma.user.update({
     where: { uid: req.params.uid },
-    data: { status: status as any },
+    data: { status: status as UserStatus },
   });
 
   await prisma.userActivityLog.create({

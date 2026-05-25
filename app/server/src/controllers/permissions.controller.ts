@@ -21,6 +21,7 @@ const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   reports:           ['super_admin', 'admin'],
   procurement:       ['super_admin', 'admin'],
   finance:           ['super_admin', 'admin'],
+  ocr_audit:         ['super_admin', 'admin'],
   admin:             ['super_admin'],
 };
 

@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import { Material } from '../types';
+import { materialsService } from '../services/materials.service';
 
 interface ExportItem {
   materialId: string;
@@ -15,26 +17,54 @@ interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   materials: Material[];
-  exportItems: ExportItem[];
-  setExportItems: React.Dispatch<React.SetStateAction<ExportItem[]>>;
-  exportRef: string;
-  setExportRef: (v: string) => void;
-  exportDate: string;
-  setExportDate: (v: string) => void;
-  exportNotes: string;
-  setExportNotes: (v: string) => void;
-  exportSaving: boolean;
-  onExport: () => void;
+  onSuccess: () => void;
 }
 
 const ExportModal: React.FC<ExportModalProps> = ({
-  isOpen, onClose, materials,
-  exportItems, setExportItems,
-  exportRef, setExportRef,
-  exportDate, setExportDate,
-  exportNotes, setExportNotes,
-  exportSaving, onExport
+  isOpen, onClose, materials, onSuccess
 }) => {
+  const { t } = useTranslation();
+  const [exportItems, setExportItems] = useState<ExportItem[]>([]);
+  const [exportRef, setExportRef] = useState('');
+  const [exportDate, setExportDate] = useState(new Date().toISOString().split('T')[0]);
+  const [exportNotes, setExportNotes] = useState('');
+  const [exportSaving, setExportSaving] = useState(false);
+
+  const handleExport = async () => {
+    const validItems = exportItems.filter(i => i.materialId && i.quantity > 0);
+    if (validItems.length === 0) { 
+      alert(t('materials.valid_item_required') || 'Vui lòng nhập mặt hàng hợp lệ'); 
+      return; 
+    }
+    
+    for (const item of validItems) {
+      const mat = materials.find(m => m.id === item.materialId);
+      if (mat && item.quantity > mat.currentStock) {
+        alert(`${mat.name} chỉ còn ${mat.currentStock} ${mat.unit}, không thể xuất ${item.quantity}`);
+        return;
+      }
+    }
+    
+    setExportSaving(true);
+    try {
+      await materialsService.createTransaction({
+        type: 'export', operator: 'Admin',
+        referenceId: exportRef || undefined, notes: exportNotes || undefined,
+        items: validItems
+      });
+      
+      setExportItems([]); 
+      setExportRef(''); 
+      setExportNotes('');
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      alert((t('materials.export_error') || 'Lỗi xuất kho') + ': ' + (err.message || err));
+    } finally { 
+      setExportSaving(false); 
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -44,7 +74,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Hủy</Button>
-          <Button className="bg-orange-600 hover:bg-orange-700" onClick={onExport} disabled={exportItems.length === 0 || exportSaving}>
+          <Button className="bg-orange-600 hover:bg-orange-700" onClick={handleExport} disabled={exportItems.length === 0 || exportSaving}>
             {exportSaving ? 'Đang xử lý...' : 'Xác nhận xuất kho'}
           </Button>
         </>

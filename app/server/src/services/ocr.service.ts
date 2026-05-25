@@ -1,5 +1,4 @@
 import vision from '@google-cloud/vision';
-import fetch from 'node-fetch'; // if we need to fetch image buffers
 
 // Khởi tạo Google Vision Client (Yêu cầu GOOGLE_APPLICATION_CREDENTIALS trong env)
 // Nếu chưa có, client vẫn khởi tạo nhưng khi gọi .annotateImage() sẽ throw lỗi.
@@ -14,7 +13,8 @@ async function extractTextFromUrl(imageUrl: string): Promise<string> {
     // Tải ảnh từ URL về dạng buffer (vì Vision API đôi khi không lấy được từ public URL nếu bị chặn CORS/Auth)
     const response = await fetch(imageUrl);
     if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
-    const buffer = await response.buffer();
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
     const [result] = await client.textDetection(buffer);
     const detections = result.textAnnotations;

@@ -6,23 +6,18 @@ import { ClipboardCheck, Search, Plus, QrCode } from 'lucide-react';
 import { formatDateTime } from '../../../utils/format';
 import Badge from '../../../components/ui/Badge';
 
+import api from '../../../services/api';
+import { useSocket } from '../../../hooks/useSocket';
+
 export default function StocktakeTab() {
   const [stocktakes, setStocktakes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchStocktakes();
-  }, []);
-
   const fetchStocktakes = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/inventory/stocktakes', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStocktakes(data.data);
+      const res = await api.get<{ success: boolean; data: any[] }>('/inventory/stocktakes');
+      if (res.success) {
+        setStocktakes(res.data);
       }
     } catch (error) {
       console.error(error);
@@ -31,25 +26,25 @@ export default function StocktakeTab() {
     }
   };
 
+  useEffect(() => {
+    fetchStocktakes();
+  }, []);
+
+  useSocket({ onInventoryUpdate: fetchStocktakes });
+
   const handleCreate = async () => {
     const warehouse = prompt('Nhập tên kho cần kiểm kê: (VD: KHO A)');
     if (!warehouse) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/inventory/stocktakes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ warehouse, notes: `Kiểm kê định kỳ ${warehouse}` })
-      });
-      const data = await res.json();
-      if (data.success) {
+      const res = await api.post<{ success: boolean; message?: string }>('/inventory/stocktakes', { warehouse, notes: `Kiểm kê định kỳ ${warehouse}` });
+      if (res.success) {
         fetchStocktakes();
       } else {
-        alert(data.message);
+        alert(res.message);
       }
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      alert(error.message || 'Lỗi');
     }
   };
 

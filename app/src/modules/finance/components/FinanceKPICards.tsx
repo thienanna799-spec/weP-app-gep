@@ -13,43 +13,50 @@ interface Props {
 }
 
 const FinanceKPICards: React.FC<Props> = ({ stats }) => (
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-    <Card className="p-5 bg-gradient-to-br from-blue-600 to-blue-800 text-white border-none shadow-xl shadow-blue-200">
-      <p className="text-blue-200 text-[10px] font-bold uppercase tracking-wider mb-1">Lợi nhuận thực nhận</p>
-      <h3 className="text-2xl font-black">{formatCurrency(stats.profit)}</h3>
-      <div className="mt-3 pt-3 border-t border-blue-500/30 flex justify-between text-[10px]">
-        <span className="opacity-80">Doanh thu dự kiến</span>
-        <span className="font-bold">+{formatCurrency(stats.pendingRevenue)}</span>
-      </div>
-    </Card>
-    <Card className="p-5 border-l-4 border-green-500">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-green-50 text-green-600 rounded-xl"><ArrowUpCircle className="w-5 h-5" /></div>
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+    <Card className="py-1.5 px-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white border-none flex flex-col justify-center shadow-md">
+      <div className="flex justify-between items-center">
         <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase">Đã thanh toán</p>
-          <p className="text-xl font-bold text-green-600">{formatCurrency(stats.paidRevenue)}</p>
-          <p className="text-[10px] text-gray-400">{stats.paidCount} đơn</p>
+          <p className="text-[9px] font-bold uppercase text-blue-200 mb-0.5">Lợi nhuận thực</p>
+          <h3 className="text-lg font-black leading-none">{formatCurrency(stats.profit)}</h3>
+        </div>
+        <div className="text-right flex flex-col items-end">
+          <span className="text-[8px] text-blue-300 uppercase font-bold">Dự kiến</span>
+          <span className="text-[10px] font-bold text-blue-50">+{formatCurrency(stats.pendingRevenue)}</span>
         </div>
       </div>
     </Card>
-    <Card className="p-5 border-l-4 border-amber-500">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl"><ShoppingCart className="w-5 h-5" /></div>
-        <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase">Chưa thanh toán</p>
-          <p className="text-xl font-bold text-amber-600">{formatCurrency(stats.unpaidRevenue)}</p>
-          <p className="text-[10px] text-gray-400">{stats.unpaidCount} đơn</p>
-        </div>
+
+    <Card className="py-1.5 px-3 border-l-4 border-green-500 flex items-center justify-between">
+      <div>
+        <p className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Đã thanh toán</p>
+        <p className="text-base font-bold text-green-600 leading-none">{formatCurrency(stats.paidRevenue)}</p>
+      </div>
+      <div className="text-right flex flex-col items-end">
+        <ArrowUpCircle className="w-3.5 h-3.5 text-green-500 mb-0.5" />
+        <span className="text-[9px] font-bold text-gray-400">{stats.paidCount} đơn</span>
       </div>
     </Card>
-    <Card className="p-5 border-l-4 border-red-500">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-red-50 text-red-600 rounded-xl"><ArrowDownCircle className="w-5 h-5" /></div>
-        <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase">Tổng chi phí</p>
-          <p className="text-xl font-bold text-red-600">{formatCurrency(stats.totalExpense)}</p>
-          <p className="text-[10px] text-gray-400">NL: {formatCurrency(stats.materialExpense)} | Xăng: {formatCurrency(stats.fuelExpense)}</p>
-        </div>
+
+    <Card className="py-1.5 px-3 border-l-4 border-amber-500 flex items-center justify-between">
+      <div>
+        <p className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Chưa thanh toán</p>
+        <p className="text-base font-bold text-amber-600 leading-none">{formatCurrency(stats.unpaidRevenue)}</p>
+      </div>
+      <div className="text-right flex flex-col items-end">
+        <ShoppingCart className="w-3.5 h-3.5 text-amber-500 mb-0.5" />
+        <span className="text-[9px] font-bold text-gray-400">{stats.unpaidCount} đơn</span>
+      </div>
+    </Card>
+
+    <Card className="py-1.5 px-3 border-l-4 border-red-500 flex items-center justify-between">
+      <div>
+        <p className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Tổng chi phí</p>
+        <p className="text-base font-bold text-red-600 leading-none">{formatCurrency(stats.totalExpense)}</p>
+      </div>
+      <div className="text-right flex flex-col items-end">
+        <ArrowDownCircle className="w-3.5 h-3.5 text-red-500 mb-0.5" />
+        <span className="text-[8px] font-medium text-gray-400">NL:{stats.materialExpense}</span>
       </div>
     </Card>
   </div>

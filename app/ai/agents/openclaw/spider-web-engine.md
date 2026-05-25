@@ -139,3 +139,16 @@ The ultimate safety net. AI is an "Engineering System", not just an "Assistant" 
   "G_Frontend_Impact": ["None detected"]
 }
 ```
+
+---
+## Recent Architectural Changes
+## [2026-05-18] Add Extended Inventory Fields
+- **Domains:** inventory, database
+- **Architectural reason:** DB schema changed — affects all Prisma queries
+- **Status:** Requires manual graph update + review
+
+
+## [2026-05-18] Fix Sidebar Permission Matrix Reactivity
+- **Domains:** auth, admin, infra
+- **Architectural reason:** Core auth domain behavior changed
+- **Status:** Requires manual graph update + review

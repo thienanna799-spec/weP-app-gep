@@ -12,6 +12,7 @@ import { sendSuccess, sendError } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 import { sendDeliveryProofNotification } from '../services/telegram.service.js';
+import { OrderStatus, RollStatus, DriverStatus, ShippingStatus } from '../types/enums.js';
 
 /** Emit socket event to all connected clients */
 function emitSync(req: AuthRequest, event: string, payload: any) {
@@ -48,7 +49,7 @@ export const pickRollToOrder = asyncHandler(async (req: AuthRequest, res: Respon
     await tx.productRoll.update({
       where: { id: roll.id },
       data: {
-        status: 'da_xuat_kho' as any,
+        status: RollStatus.da_xuat_kho,
         scanHistory: {
           create: { action: `Soạn hàng cho đơn: ${order.code}`, operator: req.user!.name || 'System' },
         },
@@ -60,8 +61,16 @@ export const pickRollToOrder = asyncHandler(async (req: AuthRequest, res: Respon
       await tx.order.update({
         where: { id: order.id },
         data: {
-          status: 'dang_chuan_bi' as any,
-          logs: { create: { action: 'Bắt đầu soạn hàng', createdBy: req.user!.name || req.user!.email } },
+          status: OrderStatus.dang_chuan_bi,
+          logs: { 
+            create: { 
+              actionType: 'STATUS_CHANGE', 
+              action: 'Bắt đầu soạn hàng', 
+              createdBy: req.user!.name || req.user!.uid,
+              fromStatus: order.status,
+              toStatus: 'dang_chuan_bi'
+            } 
+          },
         },
       });
     }
@@ -74,8 +83,16 @@ export const pickRollToOrder = asyncHandler(async (req: AuthRequest, res: Respon
       await tx.order.update({
         where: { id: order.id },
         data: {
-          status: 'cho_xuat_kho' as any,
-          logs: { create: { action: 'Soạn hàng xong — Sẵn sàng xuất kho', createdBy: req.user!.name || req.user!.email } },
+          status: OrderStatus.cho_xuat_kho,
+          logs: { 
+            create: { 
+              actionType: 'STATUS_CHANGE', 
+              action: 'Soạn hàng xong — Sẵn sàng xuất kho', 
+              createdBy: req.user!.name || req.user!.uid,
+              fromStatus: order.status,
+              toStatus: 'cho_xuat_kho'
+            } 
+          },
         },
       });
     }
@@ -140,7 +157,7 @@ export const assignDriverToOrder = asyncHandler(async (req: AuthRequest, res: Re
       customerAddress: order.customerAddress,
       totalRolls: order.quantity,
       totalQuantity: shippingRolls.length || order.quantity,
-      status: 'dang_giao' as any,
+      status: ShippingStatus.dang_giao,
       assignedDriverId: driverId,
       assignedDriverName: driverName,
       assignedVehicle: vehicle,
@@ -168,8 +185,17 @@ export const assignDriverToOrder = asyncHandler(async (req: AuthRequest, res: Re
     await tx.order.update({
       where: { id: order.id },
       data: {
-        status: 'dang_giao' as any,
-        logs: { create: { action: `Gán tài xế ${driverName} — Bắt đầu giao hàng`, createdBy: req.user!.name || req.user!.email } },
+        status: OrderStatus.dang_giao,
+        logs: { 
+          create: { 
+            actionType: 'ASSIGN_DRIVER', 
+            action: `Gán tài xế ${driverName} — Bắt đầu giao hàng`, 
+            createdBy: req.user!.name || req.user!.uid,
+            fromStatus: order.status,
+            toStatus: 'dang_giao',
+            metadata: { driverId, driverName, vehicle }
+          } 
+        },
       },
     });
 
@@ -177,7 +203,7 @@ export const assignDriverToOrder = asyncHandler(async (req: AuthRequest, res: Re
     if (driverId) {
       await tx.driver.updateMany({
         where: { id: driverId },
-        data: { status: 'delivering' as any },
+        data: { status: DriverStatus.delivering },
       }).catch(() => {});
     }
 
@@ -219,19 +245,27 @@ export const completeDelivery = asyncHandler(async (req: AuthRequest, res: Respo
     await tx.order.update({
       where: { id: order.id },
       data: {
-        status: 'hoan_thanh' as any,
-        logs: { create: { action: 'Giao hàng thành công', createdBy: req.user!.name || req.user!.email } },
+        status: OrderStatus.hoan_thanh,
+        logs: { 
+          create: { 
+            actionType: 'DELIVERY', 
+            action: 'Giao hàng thành công', 
+            createdBy: req.user!.name || req.user!.uid,
+            fromStatus: order.status,
+            toStatus: 'hoan_thanh'
+          } 
+        },
       },
     });
 
     // Update shipping orders & get assigned driver
     const shippingOrders = await tx.shippingOrder.findMany({
-      where: { orderId: order.id, status: 'dang_giao' as any },
+      where: { orderId: order.id, status: ShippingStatus.dang_giao },
       select: { assignedDriverId: true },
     });
     await tx.shippingOrder.updateMany({
-      where: { orderId: order.id, status: 'dang_giao' as any },
-      data: { status: 'giao_thanh_cong' as any, deliveredAt: new Date() },
+      where: { orderId: order.id, status: ShippingStatus.dang_giao },
+      data: { status: ShippingStatus.giao_thanh_cong, deliveredAt: new Date() },
     });
 
     // ✅ Fix BUG 5: Reset driver status → available after delivery completion
@@ -239,10 +273,10 @@ export const completeDelivery = asyncHandler(async (req: AuthRequest, res: Respo
     for (const dId of driverIds) {
       // Only reset if driver has no other active deliveries
       const otherActive = await tx.shippingOrder.count({
-        where: { assignedDriverId: dId, status: 'dang_giao' as any },
+        where: { assignedDriverId: dId, status: ShippingStatus.dang_giao },
       });
       if (otherActive === 0) {
-        await tx.driver.update({ where: { id: dId }, data: { status: 'available' as any } }).catch(() => {});
+        await tx.driver.update({ where: { id: dId }, data: { status: DriverStatus.available } }).catch(() => {});
       }
     }
 
@@ -295,38 +329,47 @@ export const failDelivery = asyncHandler(async (req: AuthRequest, res: Response)
 
     // Get assigned drivers before updating
     const shippingOrders = await tx.shippingOrder.findMany({
-      where: { orderId: order.id, status: 'dang_giao' as any },
+      where: { orderId: order.id, status: ShippingStatus.dang_giao },
       select: { assignedDriverId: true },
     });
 
     await tx.shippingOrder.updateMany({
-      where: { orderId: order.id, status: 'dang_giao' as any },
-      data: { status: 'giao_that_bai' as any, failedAt: new Date(), failReason: reason },
+      where: { orderId: order.id, status: ShippingStatus.dang_giao },
+      data: { status: ShippingStatus.giao_that_bai, failedAt: new Date(), failReason: reason },
     });
 
     await tx.order.update({
       where: { id: order.id },
       data: {
-        status: 'huy' as any,
+        status: OrderStatus.huy,
         note: `Giao thất bại: ${reason}`,
-        logs: { create: { action: `Giao hàng thất bại: ${reason}`, createdBy: req.user!.name || req.user!.email } },
+        logs: { 
+          create: { 
+            actionType: 'DELIVERY', 
+            action: `Giao hàng thất bại: ${reason}`, 
+            createdBy: req.user!.name || req.user!.uid,
+            fromStatus: order.status,
+            toStatus: 'huy',
+            note: reason
+          } 
+        },
       },
     });
 
     // Return rolls to stock
     await tx.productRoll.updateMany({
       where: { orderId: order.id },
-      data: { status: 'trong_kho' as any, orderId: null },
+      data: { status: RollStatus.trong_kho, orderId: null },
     });
 
     // ✅ Fix BUG 5: Reset driver status → available after delivery failure
     const driverIds = [...new Set(shippingOrders.map(s => s.assignedDriverId).filter(Boolean))] as string[];
     for (const dId of driverIds) {
       const otherActive = await tx.shippingOrder.count({
-        where: { assignedDriverId: dId, status: 'dang_giao' as any },
+        where: { assignedDriverId: dId, status: ShippingStatus.dang_giao },
       });
       if (otherActive === 0) {
-        await tx.driver.update({ where: { id: dId }, data: { status: 'available' as any } }).catch(() => {});
+        await tx.driver.update({ where: { id: dId }, data: { status: DriverStatus.available } }).catch(() => {});
       }
     }
   });

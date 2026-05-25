@@ -129,7 +129,7 @@ const ExcelImportPanel: React.FC<ExcelImportPanelProps> = ({ onImportComplete })
               <div className="flex flex-wrap gap-1 mt-2 font-mono text-[10px]">
                 {['STT', 'SKU', 'XƯỞNG'].map(c => <span key={c} className="bg-blue-100 px-2 py-1 rounded">{c}</span>)}
                 <span className="bg-blue-100 px-2 py-1 rounded font-bold text-red-600">TÊN SP *</span>
-                {['SUB-SKU', 'MÀU SẮC', 'QUY CÁCH', 'THÔNG SỐ KHÁC'].map(c => <span key={c} className="bg-blue-100 px-2 py-1 rounded">{c}</span>)}
+                {['SUB-SKU', 'MÀU SẮC', 'KÍCH THƯỚC', 'ĐƠN VỊ BÁN', 'K.THƯỚC Đ.VỊ', 'GIÁ/ĐV', 'QUY CÁCH', 'THÔNG SỐ KHÁC'].map(c => <span key={c} className="bg-blue-100 px-2 py-1 rounded">{c}</span>)}
                 <span className="bg-orange-100 px-2 py-1 rounded font-bold text-orange-700">SỐ LƯỢNG</span>
                 {['GIÁ VỐN', 'Ghi chú', 'NOTE'].map(c => <span key={c} className="bg-blue-100 px-2 py-1 rounded">{c}</span>)}
               </div>

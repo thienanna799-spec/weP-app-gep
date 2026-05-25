@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
+import { RollStatus } from '../types/enums.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 import crypto from 'crypto';
@@ -89,7 +90,7 @@ export const createImportBatch = asyncHandler(async (req: AuthRequest, res: Resp
           length: 0,
           weight: 0,
           productionDate: now,
-          status: rollStatus as any,
+          status: rollStatus as RollStatus,
           creator: req.user!.uid,
           sourceType: 'manual',
           supplier: supplier || null,
@@ -245,7 +246,7 @@ export const scanManualRoll = asyncHandler(async (req: AuthRequest, res: Respons
   const updated = await prisma.productRoll.update({
     where: { id: roll.id },
     data: {
-      status: statusToSet as any,
+      status: statusToSet as RollStatus,
       scanHistory: {
         create: {
           action: `Nhập kho (thủ công) — ${qualityLabel}`,
@@ -277,4 +278,18 @@ export const downloadImportTemplate = asyncHandler(async (_req: AuthRequest, res
  *  Returns: { batchIds, summary: { totalRows, success, failed }, errors: [] }
  */
 export const importExcel = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { fileBase64, quickImport } = req
+  const { fileBase64, quickImport } = req.body as { fileBase64: string; quickImport?: boolean };
+
+  if (!fileBase64) {
+    sendError(res, 'fileBase64 is required', 400);
+    return;
+  }
+
+  const result = await ImportBatchExcelService.processImport(fileBase64, req.user!.uid, req.user!.email, quickImport || false);
+  
+  if (result.summary.success > 0) {
+    emitSync(req, 'inventory_updated', { type: 'batch_imported' });
+  }
+
+  sendSuccess(res, result, 201, `Đã import thành công ${result.summary.success}/${result.summary.totalRows} dòng`);
+});

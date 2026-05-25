@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './hooks/useAuth';
@@ -17,21 +17,39 @@ import Card from './components/ui/Card';
 import Button from './components/ui/Button';
 import { LogOut } from 'lucide-react';
 import { logout } from './services/authService';
-import { getRolesForModule, setRuntimePermissions } from './config/sidebar';
+import { getRolesForModule, setRuntimePermissions, getVisibleModules } from './config/sidebar';
 import RoleGuard from './components/auth/RoleGuard';
 import api from './services/api';
 import { useSocket } from './hooks/useSocket';
+
+const HomeRedirect: React.FC = () => {
+  const { profile } = useAuth();
+  if (!profile) return <Navigate to="/login" replace />;
+
+  const visibleModules = getVisibleModules(profile.role);
+  if (visibleModules.length > 0) {
+    return <Navigate to={visibleModules[0].path} replace />;
+  }
+  
+  return <Navigate to="/unauthorized" replace />;
+};
 
 const App: React.FC = () => {
   const { user, profile, loading } = useAuth();
   const { t } = useTranslation();
 
+  const [permissionsLoading, setPermissionsLoading] = useState(!!user);
+
   // Load permissions from API on startup
   const loadPermissions = () => {
     if (user) {
+      setPermissionsLoading(true);
       api.get<Record<string, string[]>>('/admin/permissions')
         .then(perms => setRuntimePermissions(perms))
-        .catch(() => { /* use defaults */ });
+        .catch(() => { /* use defaults */ })
+        .finally(() => setPermissionsLoading(false));
+    } else {
+      setPermissionsLoading(false);
     }
   };
 
@@ -46,7 +64,7 @@ const App: React.FC = () => {
     },
   });
 
-  if (loading) return <LoadingSpinner />;
+  if (loading || permissionsLoading) return <LoadingSpinner />;
 
   // Helper: get allowed roles for a module (reads from runtime permissions)
   const rolesFor = (id: string) => getRolesForModule(id);
@@ -56,7 +74,7 @@ const App: React.FC = () => {
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+          <Route path="/login" element={user ? <HomeRedirect /> : <LoginPage />} />
           
           {/* Blocked Account */}
           <Route path="/blocked" element={
@@ -83,7 +101,7 @@ const App: React.FC = () => {
               <AppLayout profile={profile!} />
             </ProtectedRoute>
           }>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<HomeRedirect />} />
             <Route path="/dashboard" element={<RoleGuard userRole={profile?.role || 'pending'} allowedRoles={rolesFor('dashboard')}><Modules.DashboardPage /></RoleGuard>} />
             <Route path="/materials" element={<RoleGuard userRole={profile?.role || 'pending'} allowedRoles={rolesFor('materials')}><Modules.MaterialsPage /></RoleGuard>} />
             <Route path="/production-orders" element={<RoleGuard userRole={profile?.role || 'pending'} allowedRoles={rolesFor('production_orders')}><Modules.ProductionOrdersPage profile={profile!} /></RoleGuard>} />
@@ -94,10 +112,8 @@ const App: React.FC = () => {
             <Route path="/customers" element={<RoleGuard userRole={profile?.role || 'pending'} allowedRoles={rolesFor('customers')}><Modules.CustomersPage /></RoleGuard>} />
             <Route path="/reports" element={<RoleGuard userRole={profile?.role || 'pending'} allowedRoles={rolesFor('reports')}><Modules.ReportsPage /></RoleGuard>} />
             <Route path="/drivers" element={<RoleGuard userRole={profile?.role || 'pending'} allowedRoles={rolesFor('drivers')}><Modules.DriversPage /></RoleGuard>} />
-            <Route path="/procurement" element={<RoleGuard userRole={profile?.role || 'pending'} allowedRoles={rolesFor('procurement')}><Modules.ProcurementPage /></RoleGuard>} />
             <Route path="/finance" element={<RoleGuard userRole={profile?.role || 'pending'} allowedRoles={rolesFor('finance')}><Modules.FinancePage /></RoleGuard>} />
             <Route path="/admin" element={<RoleGuard userRole={profile?.role || 'pending'} allowedRoles={rolesFor('admin')}><Modules.AdminPage /></RoleGuard>} />
-            <Route path="/ocr-audit" element={<RoleGuard userRole={profile?.role || 'pending'} allowedRoles={rolesFor('ocr_audit')}><Modules.OcrAuditPage /></RoleGuard>} />
           </Route>
 
           {/* 404 Route */}

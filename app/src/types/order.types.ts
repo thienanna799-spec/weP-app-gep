@@ -20,6 +20,8 @@ export interface OrderItem {
   unit: string;
   unitPrice: number;
   note?: string;
+  sku?: string;
+  subSku?: string;
 }
 
 export interface OrderLog {

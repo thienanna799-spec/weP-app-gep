@@ -11,15 +11,8 @@ import OrderSummary from './OrderSummary';
 import OrderItemsTable from './OrderItemsTable';
 import OrderLogsTimeline from './OrderLogsTimeline';
 import InlineInvoiceReview from './InlineInvoiceReview';
-
-interface DeliveryProof {
-  id: string;
-  fileType: string;
-  fileName: string;
-  fileUrl: string;
-  uploadedBy: string;
-  createdAt: string;
-}
+import DeliveryProofPhotos, { DeliveryProof } from './DeliveryProofPhotos';
+import FullscreenPreview from './FullscreenPreview';
 
 interface OrderDetailModalProps {
   isOpen: boolean;
@@ -105,7 +98,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Chi tiết đơn hàng: #${order.code}`}
-      size="lg"
+      size="4xl"
       footer={
         showInvoice ? (
           <div className="flex flex-col gap-3 w-full">
@@ -157,146 +150,23 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       ) : (
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 max-h-[70vh] overflow-y-auto px-1 custom-scrollbar">
         {/* Order Info */}
-        <div className="md:col-span-7 space-y-6">
+        <div className="md:col-span-8 space-y-6">
           <OrderSummary order={order} />
           <OrderItemsTable order={order} items={items} />
 
-          {/* Delivery Proof Photos */}
-          {proofs.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                <Camera className="w-4 h-4 text-green-500" />
-                <h3 className="text-xs font-bold text-slate-400 uppercase">Chứng từ giao hàng</h3>
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> {proofs.length} file
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {proofs.map((proof) => (
-                  <div
-                    key={proof.id}
-                    className="group relative rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => setPreviewUrl(proof.fileUrl)}
-                  >
-                    {proof.fileType === 'image' ? (
-                      <img src={proof.fileUrl} alt={proof.fileName} className="w-full h-24 object-cover" />
-                    ) : (
-                      <video src={proof.fileUrl} className="w-full h-24 object-cover" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
-                      <p className="text-white text-[9px] font-bold truncate">{proof.uploadedBy} · {formatDateTime(proof.createdAt)}</p>
-                    </div>
-                    <div className="absolute top-1 left-1">
-                      <span className={`px-1 py-0.5 text-[8px] font-bold rounded-full ${
-                        proof.fileType === 'video' ? 'bg-purple-500 text-white' : 'bg-blue-500 text-white'
-                      }`}>
-                        {proof.fileType === 'video' ? '🎥' : '📷'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <DeliveryProofPhotos proofs={proofs} setPreviewUrl={setPreviewUrl} />
         </div>
 
-        {/* Timeline & Progress */}
-        <div className="md:col-span-5 space-y-6">
+        {/* Logs */}
+        <div className="md:col-span-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
           <OrderLogsTimeline logs={logs} />
         </div>
       </div>
       )}
 
-      {/* Full-screen Preview */}
-      {previewUrl && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4"
-          onClick={() => setPreviewUrl(null)}
-        >
-          <button
-            className="absolute top-4 right-4 p-2 bg-white/20 rounded-full text-white hover:bg-white/40 transition-colors"
-            onClick={() => setPreviewUrl(null)}
-          >
-            <X className="w-6 h-6" />
-          </button>
-          {previewUrl.startsWith('data:video') ? (
-            <video src={previewUrl} controls autoPlay className="max-w-full max-h-[90vh] rounded-xl" onClick={(e) => e.stopPropagation()} />
-          ) : (
-            <img src={previewUrl} alt="Preview" className="max-w-full max-h-[90vh] rounded-xl object-contain" onClick={(e) => e.stopPropagation()} />
-          )}
-        </div>
-      )}
+      <FullscreenPreview previewUrl={previewUrl} setPreviewUrl={setPreviewUrl} />
     </Modal>
   );
 };
 
 export default OrderDetailModal;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          /**
- * ReturnsConstants — Types, labels, and formatters for the Returns module
- * ─────────────────────────────────────────────────────────────────────────
- * Extracted from ReturnsTab for reuse across ReturnsTab & ReturnDetailModal.
- */
-
-export interface ReturnRequest {
-  id: string;
-  code: string;
-  orderId: string;
-  type: string;
-  reason: string;
-  status: string;
-  resolution: string | null;
-  refundAmount: number;
-  refundMethod: string | null;
-  refundedAt: string | null;
-  reshipOrderId: string | null;
-  createdByName: string;
-  processedByName: string | null;
-  createdAt: string;
-  resolvedAt: string | null;
-  order: {
-    code: string;
-    customerName: string;
-    customerPhone: string;
-    totalRevenue: number | null;
-    status: string;
-    customer: { telegramChatId: string | null } | null;
-  };
-}
-
-export interface ReturnStats {
-  total: number; pending: number; approved: number;
-  processing: number; resolved: number; rejected: number;
-  totalRefundAmount: number;
-}
-
-export const STATUS_LABELS: Record<string, string> = {
-  pending: 'Chờ duyệt',
-  approved: 'Đã duyệt',
-  processing: 'Đang xử lý',
-  resolved: 'Đã giải quyết',
-  rejected: 'Từ chối',
-};
-
-export const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  approved: 'bg-blue-100 text-blue-700',
-  processing: 'bg-purple-100 text-purple-700',
-  resolved: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
-};
-
-export const TYPE_LABELS: Record<string, string> = {
-  failed_delivery: 'Giao thất bại',
-  customer_return: 'KH trả hàng',
-  damaged: 'Hàng hỏng',
-};
-
-export const RESOLUTION_LABELS: Record<string, string> = {
-  refund: '💰 Hoàn tiền',
-  reship: '🚚 Giao lại',
-  exchange: '🔄 Đổi hàng',
-  cancel: '❌ Hủy đơn',
-};
-
-export const fmt = (n: number) => new Intl.NumberFormat('vi-VN').format(n);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  

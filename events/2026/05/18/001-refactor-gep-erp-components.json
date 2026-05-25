@@ -1,0 +1,40 @@
+{
+  "event_id": "2026-05-18-001",
+  "timestamp": "2026-05-18T03:27:37.028Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "6510ec7",
+  "type": "TECH_DEBT",
+  "severity": "LOW",
+  "title": "Refactor GEP ERP Components",
+  "why": "Files were exceeding the 200 line limit and becoming difficult to maintain",
+  "root_cause": "Accumulated technical debt and inline state/JSX",
+  "solution": "Extracted Modals, Tables, and State logic into dedicated sub-components and hooks",
+  "blast_radius": [
+    "inventory-stock-calculation",
+    "product-roll-status",
+    "order-reservation",
+    "qr-scanner",
+    "order-status-machine",
+    "inventory-reservation",
+    "shipping-creation",
+    "payment-trigger"
+  ],
+  "affected_files": [
+    "app/src/modules/inventory/page.tsx",
+    "app/src/modules/orders/page.tsx",
+    "app/src/modules/admin/page.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "inventory",
+    "orders",
+    "admin"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "Enforce strict 200-line limits and Component-based architecture",
+  "rollback_strategy": "Git revert the UI refactor commits if regression is found",
+  "governance_approval": true,
+  "data_loss": false,
+  "related_adr": []
+}

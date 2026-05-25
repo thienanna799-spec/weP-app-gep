@@ -1,33 +1,34 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-  footer?: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
-  scrollable?: boolean;
-}
+  interface ModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    children: React.ReactNode;
+    footer?: React.ReactNode;
+    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
+    scrollable?: boolean;
+  }
 
-const Modal: React.FC<ModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children, 
-  footer,
-  size = 'md',
-  scrollable = true
-}) => {
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-2xl',
-    lg: 'max-w-4xl',
-    xl: 'max-w-5xl',
-    '2xl': 'max-w-6xl',
-    '3xl': 'max-w-7xl'
-  };
+  const Modal: React.FC<ModalProps> = ({ 
+    isOpen, 
+    onClose, 
+    title, 
+    children, 
+    footer,
+    size = 'md',
+    scrollable = true
+  }) => {
+    const sizeClasses = {
+      sm: 'max-w-md',
+      md: 'max-w-2xl',
+      lg: 'max-w-4xl',
+      xl: 'max-w-5xl',
+      '2xl': 'max-w-6xl',
+      '3xl': 'max-w-7xl',
+      '4xl': 'w-[95vw] max-w-[1600px]'
+    };
 
   if (!isOpen) return null;
 
@@ -55,4 +56,13 @@ const Modal: React.FC<ModalProps> = ({
         </div>
         
         {footer && (
-          <div className="p-6 border-t b
+          <div className="p-4 border-t border-slate-100 bg-slate-50">
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Modal;

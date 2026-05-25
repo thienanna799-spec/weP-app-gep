@@ -9,6 +9,9 @@ import { errorMiddleware, notFound } from './server/src/middlewares/error.middle
 import { Server as SocketIOServer } from 'socket.io';
 import http from 'http';
 import { invalidateCacheForEvent } from './server/src/lib/report-cache.js';
+import { requestIdMiddleware, loggingMiddleware } from './server/src/middlewares/logging.middleware.js';
+import rateLimit from 'express-rate-limit';
+import { startBackupScheduler } from './server/src/lib/backup-scheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,6 +49,8 @@ async function startServer() {
   });
 
   // ── Core Middleware ──────────────────────────────────────
+  app.use(requestIdMiddleware as any);
+  app.use(loggingMiddleware as any);
   app.use(cors({ origin: [FRONTEND_URL, 'http://localhost:3000', 'http://localhost:4000', 'https://gepoder.click', 'https://driver.gepoder.click', 'capacitor://localhost', 'http://localhost'], credentials: true }));
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true }));
@@ -53,9 +58,16 @@ async function startServer() {
 
   // ── Static Uploads ──────────────────────────────────────
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
   // ── API Routes (Express + Prisma + MySQL) ───────────────
-  app.use('/api', apiRouter);
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200, // Limit each IP to 200 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Yêu cầu quá thường xuyên, vui lòng thử lại sau.' },
+  });
+
+  app.use('/api', apiLimiter, apiRouter);
 
   // ── Production: Serve built frontend ────────────────────
   if (process.env.NODE_ENV === 'production') {
@@ -77,6 +89,9 @@ async function startServer() {
     console.log(`   Frontend: ${FRONTEND_URL}`);
     console.log(`   DB:       localhost:3306`);
     console.log(`   Mode:     ${process.env.NODE_ENV || 'development'}\n`);
+    
+    // Start automated daily backup scheduler
+    startBackupScheduler();
   });
 }
 

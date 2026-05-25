@@ -4,6 +4,7 @@ import { sendSuccess, sendError } from '../../utils/apiResponse.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { AuthRequest } from '../../middlewares/auth.middleware.js';
 import { emitSync } from './orders.core.controller.js';
+import { recordSalesOrderEvent } from '../../services/orderTracking.service.js';
 
 /** PUT /api/orders/:id/payment-status — Update payment status */
 export const updatePaymentStatus = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -25,13 +26,14 @@ export const updatePaymentStatus = asyncHandler(async (req: AuthRequest, res: Re
     where: { id: orderId },
     data: {
       paymentStatus,
-      logs: {
-        create: {
-          action: isPaying ? 'Xác nhận thanh toán' : 'Hủy thanh toán',
-          createdBy: req.user!.name || req.user!.email,
-        },
-      },
     },
+  });
+
+  await recordSalesOrderEvent(orderId, {
+    actionType: 'PAYMENT',
+    action: isPaying ? 'Xác nhận thanh toán' : 'Hủy thanh toán',
+    operator: req.user!.name || req.user!.uid,
+    metadata: { oldPaymentStatus: order.paymentStatus, newPaymentStatus: paymentStatus }
   });
 
   if (order.customerId && order.totalRevenue) {

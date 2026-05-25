@@ -48,7 +48,7 @@ export default function MapCanvas({
       const statusIcon = STATUS_ICONS[driver.status] || '📍';
       const time = gps ? new Date(gps.timestamp).toLocaleTimeString('vi-VN') : '';
       const isFocused = focusedDriver === driver.id;
-      const initials = driver.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+      const initials = (driver.name || 'TX').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
       return `
         // Circle marker
         L.circleMarker([${gps!.lat}, ${gps!.lng}], {
@@ -61,16 +61,16 @@ export default function MapCanvas({
         }).addTo(map).bindPopup(\`
           <div style="font-family:system-ui;min-width:160px">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-              <div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900">\${initials}</div>
+              <div style="width:28px;height:28px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900">${initials}</div>
               <div>
-                <p style="font-weight:900;font-size:13px;margin:0">\${driver.name}</p>
-                <p style="font-size:10px;color:#94a3b8;font-family:monospace;margin:0">\${driver.code}</p>
+                <p style="font-weight:900;font-size:13px;margin:0">${driver.name}</p>
+                <p style="font-size:10px;color:#94a3b8;font-family:monospace;margin:0">${driver.code}</p>
               </div>
             </div>
-            <p style="font-size:11px;margin:6px 0 0">\${statusIcon} \${statusLabel}</p>
+            <p style="font-size:11px;margin:6px 0 0">${statusIcon} ${statusLabel}</p>
             <hr style="border:none;border-top:1px solid #f1f5f9;margin:6px 0"/>
-            <p style="font-size:9px;color:#94a3b8;margin:0">📍 \${gps!.lat.toFixed(6)}, \${gps!.lng.toFixed(6)}</p>
-            <p style="font-size:9px;color:#94a3b8;margin:2px 0 0">🕒 \${time}</p>
+            <p style="font-size:9px;color:#94a3b8;margin:0">📍 ${gps!.lat.toFixed(6)}, ${gps!.lng.toFixed(6)}</p>
+            <p style="font-size:9px;color:#94a3b8;margin:2px 0 0">🕒 ${time}</p>
           </div>
         \`);
 
@@ -78,7 +78,7 @@ export default function MapCanvas({
         L.marker([${gps!.lat}, ${gps!.lng}], {
           icon: L.divIcon({
             className: '',
-            html: '<div style="background:${color};color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:800;font-family:system-ui;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);border:2px solid #fff;transform:translate(16px,-8px)">\${driver.name}</div>',
+            html: '<div style="background:${color};color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:800;font-family:system-ui;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);border:2px solid #fff;transform:translate(16px,-8px)">${driver.name}</div>',
             iconSize: [0, 0]
           })
         }).addTo(map);

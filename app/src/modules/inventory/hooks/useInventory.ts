@@ -23,4 +23,5 @@ export const useInventory = () => {
 
   useEffect(() => { fetch(); }, [fetch]);
 
- 
+  return { rolls, loading, error, refetch: fetch };
+};

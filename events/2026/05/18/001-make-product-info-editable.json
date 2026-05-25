@@ -1,0 +1,37 @@
+{
+  "event_id": "2026-05-18-001",
+  "timestamp": "2026-05-18T04:23:32.321Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "6510ec7",
+  "type": "FEATURE",
+  "severity": "MEDIUM",
+  "title": "Make Product Info Editable",
+  "why": "User wanted to manually add or edit product fields like Color, Size, and Price directly from the UI without breaking the system",
+  "root_cause": "Information panel was read-only",
+  "solution": "Added PUT /api/inventory/product-info endpoint that safely updates both ImportBatch and ProductRoll models using a transaction based on the supplier/subSku composite key. Updated StockDetailModal to toggle an edit state.",
+  "blast_radius": [
+    "inventory-stock-calculation",
+    "product-roll-status",
+    "order-reservation",
+    "qr-scanner"
+  ],
+  "affected_files": [
+    "app/server/src/router.ts",
+    "app/server/src/controllers/stock-sync.controller.ts",
+    "app/src/modules/inventory/services/inventory.service.ts",
+    "app/src/modules/inventory/components/StockDetailModal.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "inventory",
+    "database",
+    "ui"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "Always ensure composite keys (supplier + subSku) remain read-only when updating bulk records to prevent data fragmentation",
+  "rollback_strategy": "Git revert changes",
+  "governance_approval": true,
+  "data_loss": false,
+  "related_adr": []
+}

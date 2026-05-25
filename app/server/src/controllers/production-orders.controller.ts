@@ -3,6 +3,8 @@ import { prisma } from '../lib/prisma.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
+import { recordProductionEvent } from '../services/productionTracking.service.js';
+import { recordSystemAudit } from '../services/systemAudit.service.js';
 
 /** GET /api/production-orders */
 export const getProductionOrders = asyncHandler(async (_req: AuthRequest, res: Response) => {
@@ -91,6 +93,15 @@ export const createProductionOrder = asyncHandler(async (req: AuthRequest, res: 
     include: { materials: true },
   });
 
+  // ── Record Event ──────────────────────────────────────────
+  await recordProductionEvent(po.id, {
+    actionType: 'CREATE',
+    action: `Tạo lệnh sản xuất ${po.code}`,
+    operator: req.user?.name || req.user!.uid,
+    toStatus: po.status,
+    metadata: { targetRolls: po.targetRolls, specs: po.specs },
+  });
+
   // ── Procurement Auto-PO ─────────────────────────────────
   if (materials?.length) {
     for (const mat of materials) {
@@ -147,6 +158,8 @@ export const createProductionOrder = asyncHandler(async (req: AuthRequest, res: 
 /** PUT /api/production-orders/:id */
 export const updateProductionOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { materials, ...data } = req.body;
+  const oldPo = await prisma.productionOrder.findUnique({ where: { id: req.params.id } });
+
   const po = await prisma.productionOrder.update({
     where: { id: req.params.id },
     data: {
@@ -155,6 +168,17 @@ export const updateProductionOrder = asyncHandler(async (req: AuthRequest, res: 
     },
     include: { materials: true },
   });
+
+  await recordProductionEvent(po.id, {
+    actionType: 'UPDATE',
+    action: `Cập nhật thông tin lệnh sản xuất`,
+    operator: req.user?.name || req.user!.uid,
+    metadata: { 
+      updatedFields: Object.keys(data),
+      targetRolls: po.targetRolls 
+    },
+  });
+
   sendSuccess(res, po, 200, 'Production order updated');
 });
 
@@ -170,9 +194,25 @@ export const updateProductionOrderStatus = asyncHandler(async (req: AuthRequest,
     data.completedAt = null;
   }
 
+  const oldPo = await prisma.productionOrder.findUnique({ where: { id: req.params.id } });
+
   const po = await prisma.productionOrder.update({
     where: { id: req.params.id },
     data,
+  });
+
+  const actionTypeMap: Record<string, any> = {
+    cancelled: 'CANCEL',
+    completed: 'COMPLETE',
+    producing: 'START'
+  };
+
+  await recordProductionEvent(po.id, {
+    actionType: actionTypeMap[status] || 'OTHER',
+    action: `Cập nhật trạng thái lệnh sản xuất`,
+    operator: req.user?.name || req.user!.uid,
+    fromStatus: oldPo?.status,
+    toStatus: po.status,
   });
 
   // When cancelling, reset linked order back to 'da_duyet' so it re-appears in queue
@@ -188,6 +228,18 @@ export const updateProductionOrderStatus = asyncHandler(async (req: AuthRequest,
 
 /** DELETE /api/production-orders/:id */
 export const deleteProductionOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const po = await prisma.productionOrder.findUnique({ where: { id: req.params.id } });
+  if (po) {
+    await recordSystemAudit({
+      userId: req.user!.uid,
+      email: req.user!.email || 'system',
+      action: 'DELETE',
+      module: 'PRODUCTION_ORDER',
+      referenceId: po.id,
+      description: `Xóa lệnh sản xuất ${po.code}`,
+      oldValue: po
+    });
+  }
   await prisma.productionOrder.delete({ where: { id: req.params.id } });
   sendSuccess(res, null, 200, 'Production order deleted');
 });

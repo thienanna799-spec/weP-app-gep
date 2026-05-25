@@ -1,8 +1,10 @@
 import React from 'react';
 import { useStorageCapacity } from '../../../hooks/useStorageCapacity';
 
-export const StorageCapacityTab: React.FC = () => {
-  const { capacity, loading, error, refetch } = useStorageCapacity();
+import { WarehouseConfig } from './warehouseConfig';
+
+export const StorageCapacityTab: React.FC<{ config: WarehouseConfig }> = ({ config }) => {
+  const { capacity, loading, error, refetch } = useStorageCapacity(config.zones);
 
   if (loading) {
     return (

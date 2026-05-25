@@ -222,11 +222,11 @@ export class ImportBatchExcelService {
   static async generateTemplate(): Promise<any> {
     const XLSX = await import('xlsx');
     const templateData = [
-      { 'STT': 1, 'SKU': 'BWP-TH-BLACK-4inch', 'XƯỞNG': 'TT', 'TÊN SP': 'BWP', 'SUB-SKU': 'TT-BWP-BLACK-Half', 'MÀU SẮC': 'BLACK', 'QUY CÁCH': 'Halfx60', 'SỐ LƯỢNG': 10, 'THÔNG SỐ KHÁC': '3,3', 'GIÁ VỐN': 320, 'Ghi chú': '23/03/2026', 'NOTE': 'Half' },
-      { 'STT': 2, 'SKU': 'BWP-TK-WHITE-4inch', 'XƯỞNG': 'PP', 'TÊN SP': 'BWP', 'SUB-SKU': 'PP-BWP-WHITE-Full', 'MÀU SẮC': 'WHITE', 'QUY CÁCH': 'Fullx70', 'SỐ LƯỢNG': 5, 'THÔNG SỐ KHÁC': '3,7', 'GIÁ VỐN': 350, 'Ghi chú': '', 'NOTE': 'Whole' }
+      { 'STT': 1, 'SKU': 'BWP-TH-BLACK-4inch', 'XƯỞNG': 'TT', 'TÊN SP': 'BWP', 'SUB-SKU': 'TT-BWP-BLACK-Half', 'MÀU SẮC': 'BLACK', 'KÍCH THƯỚC': '4inch', 'ĐƠN VỊ BÁN': 'Cuộn', 'K.THƯỚC Đ.VỊ': '100m', 'GIÁ/ĐV': 50000, 'QUY CÁCH': 'Halfx60', 'SỐ LƯỢNG': 10, 'THÔNG SỐ KHÁC': '3,3', 'GIÁ VỐN': 320, 'Ghi chú': '23/03/2026', 'NOTE': 'Half' },
+      { 'STT': 2, 'SKU': 'BWP-TK-WHITE-4inch', 'XƯỞNG': 'PP', 'TÊN SP': 'BWP', 'SUB-SKU': 'PP-BWP-WHITE-Full', 'MÀU SẮC': 'WHITE', 'KÍCH THƯỚC': '4inch', 'ĐƠN VỊ BÁN': 'Cuộn', 'K.THƯỚC Đ.VỊ': '70m', 'GIÁ/ĐV': 60000, 'QUY CÁCH': 'Fullx70', 'SỐ LƯỢNG': 5, 'THÔNG SỐ KHÁC': '3,7', 'GIÁ VỐN': 350, 'Ghi chú': '', 'NOTE': 'Whole' }
     ];
     const ws = XLSX.utils.json_to_sheet(templateData);
-    ws['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 10 }, { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 20 }, { wch: 12 }, { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 20 }];
+    ws['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 15 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Import Template');
     return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
@@ -285,9 +285,14 @@ export class ImportBatchExcelService {
         row['THÔNG SỐ KHÁC'] ? `Thông số khác: ${row['THÔNG SỐ KHÁC']}` : '', formatNoteVal(row.note)
       ].filter(Boolean).join(' | ');
 
+      const pricePerUnitRaw = row['GIÁ/ĐV'] ?? row.pricePerUnit ?? null;
+      const pricePerUnit = pricePerUnitRaw !== null && pricePerUnitRaw !== '' ? Number(pricePerUnitRaw) : null;
+
       validRows.push({
         rowNum, productName, sku: String(row['SKU'] || row.sku || '').trim(), subSku: String(row['SUB-SKU'] || row.sub_sku || '').trim(),
         specification: String(row['QUY CÁCH'] || row.specification || '').trim(), color: String(row['MÀU SẮC'] || row.color || '').trim(),
+        size: String(row['KÍCH THƯỚC'] || row.size || '').trim(), salesUnit: String(row['ĐƠN VỊ BÁN'] || row.salesUnit || '').trim(),
+        unitSize: String(row['K.THƯỚC Đ.VỊ'] || row.unitSize || '').trim(), pricePerUnit: pricePerUnit !== null && !isNaN(pricePerUnit) ? pricePerUnit : null,
         otherSpecs: String(row['THÔNG SỐ KHÁC'] || row.otherSpecs || '').trim(), costPrice: costPrice !== null && !isNaN(costPrice) ? costPrice : null,
         quantity, supplier: String(row['XƯỞNG'] || row.supplier || '').trim(), note: notes,
       });
@@ -310,4 +315,81 @@ export class ImportBatchExcelService {
             sku: b.sku || null,
             subSku: b.subSku || null,
             specification: b.specification || null,
-            color: b.c
+            color: b.color || null,
+            size: b.size || null,
+            salesUnit: b.salesUnit || null,
+            unitSize: b.unitSize || null,
+            pricePerUnit: b.pricePerUnit,
+            otherSpecs: b.otherSpecs || null,
+            costPrice: b.costPrice,
+            quantity: b.quantity,
+            nhapKho: quickImport ? b.quantity : 0,
+            tonKho: quickImport ? b.quantity : 0,
+            supplier: b.supplier || null,
+            note: b.note || null,
+            createdBy: userId,
+            createdByName: userEmail,
+          }
+        });
+
+        batchIds.push(batch.id);
+
+        if (b.quantity > 0) {
+          const rollsData = Array.from({ length: b.quantity }).map(() => {
+            const randomHex = crypto.randomBytes(4).toString('hex').toUpperCase();
+            const prefix = b.supplier ? `${b.supplier}-` : 'EXT-';
+            const skuPart = b.sku ? `${b.sku}-` : '';
+            const code = `${prefix}${skuPart}${Date.now()}-${randomHex}`;
+            return {
+              id: code,
+              code: code,
+              qrCode: code,
+              productId: `IMPORT-${batch.id}`,
+              productName: b.productName,
+              sku: b.sku || null,
+              subSku: b.subSku || null,
+              specification: b.specification || null,
+              color: b.color || null,
+              size: b.size || null,
+              salesUnit: b.salesUnit || null,
+              unitSize: b.unitSize || null,
+              pricePerUnit: b.pricePerUnit,
+              supplier: b.supplier || null,
+              costPrice: b.costPrice,
+              status: rollStatus as any,
+              creator: userId,
+              length: 0,
+              weight: 0,
+              productionDate: new Date(),
+              stockQuantity: 1,
+              importBatchId: batch.id,
+              sourceType: 'manual'
+            };
+          });
+
+          await tx.productRoll.createMany({ data: rollsData });
+          
+          for (const r of rollsData) {
+            await tx.rollScanHistory.create({
+              data: {
+                rollId: r.id,
+                action: scanAction,
+                operator: userEmail,
+              }
+            });
+          }
+          totalRollsCreated += b.quantity;
+        }
+      }
+    });
+
+    await prisma.userActivityLog.create({
+      data: {
+        userId, email: userEmail, action: 'Batch Import Excel', module: 'Inventory',
+        description: `Imported ${validRows.length} batches, generated ${totalRollsCreated} rolls. QuickImport=${quickImport}`
+      }
+    });
+
+    return { batchIds, summary: { totalRows: rows.length, success: validRows.length, failed: errors.length, totalRollsCreated }, errors };
+  }
+}

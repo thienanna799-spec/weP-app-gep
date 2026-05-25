@@ -50,11 +50,6 @@ const DispatchOrderList: React.FC<Props> = ({
 
   return (
     <div className={`flex flex-col gap-4 transition-all duration-500 ${selectedOrderId ? 'w-[30%]' : 'w-full'}`}>
-      <div className="px-2">
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('shipping.title')}</h2>
-        <p className="text-sm font-medium text-slate-500">{t('shipping.subtitle')}</p>
-      </div>
-
       {/* KPI cards */}
       {!selectedOrderId && (
         <div className="grid grid-cols-4 gap-3 px-2">
@@ -77,14 +72,8 @@ const DispatchOrderList: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Search + Order list */}
+      {/* Order list */}
       <Card className="flex-1 flex flex-col overflow-hidden mx-2 shadow-md border border-slate-200">
-        <div className="p-4 border-b border-slate-100 bg-slate-50">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input placeholder={t('shipping.search_placeholder')} className="pl-9 h-10 w-full" value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)} />
-          </div>
-        </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-slate-50/50">
           {filteredOrders.length === 0 ? (
             <div className="text-center p-8 text-slate-400 italic text-sm">

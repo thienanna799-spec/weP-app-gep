@@ -63,6 +63,8 @@ export const DriverDetail: React.FC<DriverDetailProps> = ({ driver, vehicle, onC
 
   // Build photo list for lightbox
   const allPhotos: PhotoItem[] = [];
+  const realAvatar = driver.avatar && !driver.avatar.includes('ui-avatars.com') ? driver.avatar : undefined;
+  if (realAvatar) allPhotos.push({ label: 'Ảnh chân dung', src: realAvatar });
   if (driver.idCardPhoto) allPhotos.push({ label: 'CCCD — Mặt trước', src: driver.idCardPhoto });
   if (driver.idCardPhotoBack) allPhotos.push({ label: 'CCCD — Mặt sau', src: driver.idCardPhotoBack });
   if (driver.licensePhoto) allPhotos.push({ label: 'GPLX — Mặt trước', src: driver.licensePhoto });

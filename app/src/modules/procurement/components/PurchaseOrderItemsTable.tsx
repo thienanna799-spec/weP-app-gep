@@ -52,7 +52,7 @@ const PurchaseOrderItemsTable: React.FC<PurchaseOrderItemsTableProps> = ({
             return (
               <tr key={item.id} className={isDone ? 'bg-green-50/30' : ''}>
                 <td className="px-4 py-3 font-medium text-gray-900">{item.materialName}</td>
-                <td className="px-4 py-3 text-right text-gray-700">{item.quantity} {item.unit}</td>
+                <td className="px-4 py-3 text-right text-gray-700">{item.quantity}</td>
                 <td className="px-4 py-3 text-right">
                   <span className={`font-bold ${isDone ? 'text-green-600' : item.receivedQty > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
                     {item.receivedQty} / {item.quantity}

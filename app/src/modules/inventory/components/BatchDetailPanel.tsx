@@ -9,7 +9,7 @@ import { formatDate } from '../../../utils/format';
 import { ImportBatch } from '../types';
 
 import { inventoryService } from '../services/inventory.service';
-import { printBatchQRs } from '../utils/printQR';
+import { printBatchQRs } from '../../../utils/printQR';
 import ScanToStockPanel from '../../production/components/ScanToStockPanel';
 
 interface Props {
@@ -96,4 +96,66 @@ const BatchDetailPanel: React.FC<Props> = ({ activeBatch, getBatchStatusSummary,
           {activeBatch.sku && <div className="flex gap-1"><span className="text-slate-400">SKU:</span><span className="text-slate-700 font-mono font-medium">{activeBatch.sku}</span></div>}
           {activeBatch.subSku && <div className="flex gap-1"><span className="text-slate-400">SUB-SKU:</span><span className="text-slate-700 font-mono font-medium">{activeBatch.subSku}</span></div>}
           {activeBatch.color && <div className="flex gap-1"><span className="text-slate-400">Màu sắc:</span><span className="text-slate-700">{activeBatch.color}</span></div>}
-          {activeBatch.otherS
+          {activeBatch.otherSpecs && <div className="flex gap-1"><span className="text-slate-400">Khác:</span><span className="text-slate-700">{activeBatch.otherSpecs}</span></div>}
+          {activeBatch.note && <div className="flex gap-1 col-span-2"><span className="text-slate-400">Ghi chú:</span><span className="text-slate-700">{activeBatch.note}</span></div>}
+        </div>
+      </div>
+
+      <div className="p-5 space-y-6">
+        {/* Scanning Panel */}
+        {onScan && (
+          <ScanToStockPanel 
+            totalItems={s.total}
+            scannedItems={s.inStock}
+            onScan={onScan}
+            isComplete={s.pending === 0}
+            onComplete={() => onMarkDone && onMarkDone(activeBatch.id)}
+          />
+        )}
+
+        {/* Action Button for Admins (when onScan is not provided) */}
+        {!onScan && onMarkDone && s.pending > 0 && (
+          <div className="flex justify-end">
+            <button onClick={() => onMarkDone(activeBatch.id)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700">
+              Chốt Lô Hàng
+            </button>
+          </div>
+        )}
+
+        {/* QR List Grid */}
+        <div className="pt-2 border-t border-slate-100">
+          <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+            <QrCode className="w-4 h-4 text-slate-400" /> Danh sách mã QR 
+            <span className="text-xs font-normal text-slate-500">({activeBatch.rolls?.length || 0} cuộn)</span>
+          </h4>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            {(activeBatch.rolls || []).map(roll => {
+              const isPending = roll.status === 'cho_nhap_kho';
+              const isDefective = roll.status === 'loi' || roll.status === 'hong';
+              const isInStock = !isPending && !isDefective;
+              
+              return (
+                <div key={roll.id} className={`p-2.5 border rounded-lg flex items-center justify-between ${
+                  isPending ? 'border-slate-200 bg-white' : 
+                  isDefective ? 'border-red-200 bg-red-50' : 
+                  'border-green-200 bg-green-50'
+                }`}>
+                  <div>
+                    <p className="font-mono text-[11px] font-bold text-slate-800">{roll.qrCode}</p>
+                    <p className="text-[9px] text-slate-500 mt-0.5">{roll.code}</p>
+                  </div>
+                  {isInStock ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : 
+                   isDefective ? <FileText className="w-4 h-4 text-red-500" /> : 
+                   <Clock className="w-4 h-4 text-slate-300" />}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+export default BatchDetailPanel;

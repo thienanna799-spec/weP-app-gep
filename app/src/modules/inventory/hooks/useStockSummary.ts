@@ -20,7 +20,15 @@ interface StockRow {
   daGiuDon: number;
   loi: number;
   hong: number;
+  minStock: number;
   createdAt: string;
+  color: string;
+  size: string;
+  salesUnit: string;
+  unitSize: string;
+  pricePerUnit: number;
+  costPriceLatest?: number;
+  costPriceAverage?: number;
 }
 
 export type { StockRow };
@@ -141,10 +149,20 @@ export function useStockSummary() {
     tonThucTe: 0, tonKhaDung: 0, daGiuDon: 0, loi: 0, hong: 0 
   });
 
+  const alertCount = data.filter(r => r.minStock > 0 && r.tonKhaDung <= r.minStock).length;
+
   const clearFilters = () => {
     setFilterSupplier(''); setFilterSubSku(''); setFilterProductName('');
     setFilterSku(''); setFilterSpec(''); setFilterDateFrom(''); setFilterDateTo(''); setSearchTerm('');
   };
 
   return {
-    data, loading, filteredDa
+    data, loading, filteredData, totals,
+    searchTerm, setSearchTerm, showFilters, setShowFilters, activeFilterCount, clearFilters,
+    filterSupplier, setFilterSupplier, filterSubSku, setFilterSubSku, filterProductName, setFilterProductName,
+    filterSku, setFilterSku, filterSpec, setFilterSpec, filterDateFrom, setFilterDateFrom, filterDateTo, setFilterDateTo,
+    uniqueSuppliers, uniqueProducts, uniqueSkus,
+    importing, syncResult, previewRows, fileInputRef, alertCount,
+    handleFileSelect, handleSync, handleCancelImport, fetchData
+  };
+}

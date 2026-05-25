@@ -13,7 +13,10 @@ import StockFilterBar from './StockFilterBar';
 import StockDetailModal from './StockDetailModal';
 import { inventoryService } from '../services/inventory.service';
 import { ProductRoll } from '../types';
-import { utils, writeFile } from 'xlsx';
+import { InventoryTable } from './InventoryTable';
+import { ExportOptionsModal } from './ExportOptionsModal';
+import { exportModalToExcel, handleExportSelected } from '../utils/exportExcelUtils';
+import { Download, Loader2 } from 'lucide-react';
 
 interface Props {
   rolls?: ProductRoll[];
@@ -25,13 +28,19 @@ const InventorySummaryTab: React.FC<Props> = ({ rolls = [], onRollClick, actionB
   const h = useStockSummary();
   const [agingFilter, setAgingFilter] = useState(0);
   const [selectedRow, setSelectedRow] = useState<StockRow | null>(null);
+  const [selectedSkus, setSelectedSkus] = useState<Set<string>>(new Set());
+  const [exportingExcel, setExportingExcel] = useState(false);
   
-  // Import Goods states
   const [showImportForm, setShowImportForm] = useState(false);
   const [importQty, setImportQty] = useState('');
   const [importQuick, setImportQuick] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importedBatch, setImportedBatch] = useState<any | null>(null);
+
+  // Export Modal states
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
 
   const handleImportGoods = async () => {
     if (!selectedRow) return;
@@ -107,37 +116,12 @@ const InventorySummaryTab: React.FC<Props> = ({ rolls = [], onRollClick, actionB
     return list;
   }, [selectedRow, rolls, agingFilter]);
 
-  const exportModalToExcel = () => {
-    if (!selectedRow || filteredRolls.length === 0) return;
+  const doExportModalToExcel = () => {
+    exportModalToExcel(selectedRow, filteredRolls);
+  };
 
-    const dataToExport = filteredRolls.map((roll, index) => ({
-      'STT': index + 1,
-      'Sản phẩm': roll.productName || selectedRow.productName,
-      'Quy cách': roll.specification || selectedRow.specification,
-      'Mã cuộn': roll.code,
-      'Mã QR': roll.qrCode,
-      'Kho': roll.positionWarehouse || '',
-      'Khu vực': roll.positionArea || '',
-      'Vị trí': roll.positionSlot || '',
-      'Chiều dài (m)': roll.length,
-      'Cân nặng (kg)': roll.weight,
-      'Ngày sản xuất': roll.productionDate ? new Date(roll.productionDate).toLocaleDateString('vi-VN') : '',
-      'Trạng thái': roll.status,
-    }));
-
-    const worksheet = utils.json_to_sheet(dataToExport);
-    const workbook = utils.book_new();
-    utils.book_append_sheet(workbook, worksheet, 'Danh_sach_cuon');
-    
-    // Auto-size columns slightly
-    worksheet['!cols'] = [
-      { wch: 5 }, { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 20 },
-      { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 15 },
-      { wch: 15 }, { wch: 15 }
-    ];
-
-    const safeSku = (selectedRow.subSku || 'Unknown').replace(/[^a-zA-Z0-9-]/g, '_');
-    writeFile(workbook, `ChiTietCuon_${safeSku}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  const doHandleExportSelected = () => {
+    handleExportSelected(selectedSkus, exportStartDate, exportEndDate, setExportingExcel);
   };
 
   if (h.loading && h.data.length === 0) return <LoadingSpinner />;
@@ -148,22 +132,71 @@ const InventorySummaryTab: React.FC<Props> = ({ rolls = [], onRollClick, actionB
     const confirmMessage = `Bạn có chắc chắn muốn xóa TOÀN BỘ cuộn vật lý thuộc sản phẩm này?\n\nXưởng: ${selectedRow.supplier || '—'}\nSub-SKU: ${selectedRow.subSku || '—'}\n\nHành động này không thể hoàn tác!`;
     
     if (window.confirm(confirmMessage)) {
+      // Close modal and remove row from UI immediately (optimistic update)
+      const deletedRow = selectedRow;
+      setSelectedRow(null);
+
       try {
-        const supplier = selectedRow.supplier || '';
-        const subSku = selectedRow.subSku || '';
+        const supplier = deletedRow.supplier || '';
+        const subSku = deletedRow.subSku || '';
         await inventoryService.deleteRollGroup(supplier, subSku);
-        alert('Xóa sản phẩm thành công!');
-        h.fetchData();
-        setSelectedRow(null);
+        h.fetchData(); // Refresh data in background
       } catch (error: any) {
         console.error('Lỗi khi xóa sản phẩm:', error);
         alert('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
+        h.fetchData(); // Refresh to restore correct state on error
       }
     }
   };
 
+  const combinedActionButtons = (
+    <>
+      {selectedSkus.size > 0 && (
+        <button 
+          onClick={() => setShowExportModal(true)}
+          disabled={exportingExcel}
+          className={`flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-sm whitespace-nowrap transition-colors ${exportingExcel ? 'opacity-70 cursor-not-allowed' : 'hover:bg-emerald-700'}`}
+        >
+          {exportingExcel ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+          {exportingExcel ? 'Đang xuất...' : `Tải Excel Tổng hợp (${selectedSkus.size})`}
+        </button>
+      )}
+      {actionButtons}
+    </>
+  );
+
+  const toggleAllSkus = () => {
+    if (selectedSkus.size === h.filteredData.length) {
+      setSelectedSkus(new Set());
+    } else {
+      const allKeys = h.filteredData.map((r: any) => `${r.subSku}|${r.supplier}`);
+      setSelectedSkus(new Set(allKeys));
+    }
+  };
+
+  const toggleSku = (e: React.MouseEvent, key: string) => {
+    e.stopPropagation();
+    const newSet = new Set(selectedSkus);
+    if (newSet.has(key)) newSet.delete(key);
+    else newSet.add(key);
+    setSelectedSkus(newSet);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="flex-1 min-h-0 flex flex-col space-y-4">
+
+      {/* Export Options Modal */}
+      {showExportModal && (
+        <ExportOptionsModal
+          exportStartDate={exportStartDate}
+          setExportStartDate={setExportStartDate}
+          exportEndDate={exportEndDate}
+          setExportEndDate={setExportEndDate}
+          onClose={() => setShowExportModal(false)}
+          onExport={doHandleExportSelected}
+          exportingExcel={exportingExcel}
+        />
+      )}
 
       {/* Excel Sync Panel */}
       <StockSyncPanel syncResult={h.syncResult} previewRows={h.previewRows} importing={h.importing} onSync={h.handleSync} onCancel={h.handleCancelImport} />
@@ -181,48 +214,50 @@ const InventorySummaryTab: React.FC<Props> = ({ rolls = [], onRollClick, actionB
         filterDateFrom={h.filterDateFrom} setFilterDateFrom={h.setFilterDateFrom}
         filterDateTo={h.filterDateTo} setFilterDateTo={h.setFilterDateTo}
         uniqueSuppliers={h.uniqueSuppliers} uniqueProducts={h.uniqueProducts} uniqueSkus={h.uniqueSkus}
-        actionButtons={actionButtons}
+        actionButtons={combinedActionButtons}
       />
 
       {/* Main Data Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="max-h-[600px] overflow-auto">
-          {h.filteredData.length === 0 ? (
-            <div className="px-4 py-12 text-center text-slate-400 text-sm italic">
-              {h.data.length === 0 ? 'Chưa có dữ liệu tồn kho. Hãy nhập hàng trước hoặc import Excel.' : 'Không tìm thấy kết quả'}
-            </div>
-          ) : (
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
-                <tr className="text-[10px] uppercase tracking-wi{
-  "event_id": "2026-05-14-001",
-  "timestamp": "2026-05-14T03:15:21.139Z",
-  "workspace_id": "gep-erp-master",
-  "git_commit": "no-git",
-  "type": "BUG_FIX",
-  "severity": "HIGH",
-  "title": "Fix Inventory Page Crash - Missing BarChart3 Import",
-  "why": "The inventory page crashed to a white screen because the BarChart3 icon was removed from lucide-react imports, but it was still being used in the table header of the summary view.",
-  "root_cause": "Overzealous cleanup of imports when removing the 'Tổng hợp tồn kho' header.",
-  "solution": "Re-added the BarChart3 import to InventorySummaryTab.tsx to resolve the compilation error.",
-  "blast_radius": [
-    "inventory-stock-calculation",
-    "product-roll-status",
-    "order-reservation",
-    "qr-scanner"
-  ],
-  "affected_files": [
-    "app/src/modules/inventory/components/InventorySummaryTab.tsx"
-  ],
-  "affected_nodes": [],
-  "affected_domains": [
-    "inventory"
-  ],
-  "caused_by": [],
-  "related_incidents": [],
-  "prevention": "Double check all usages of an import within the entire file before removing it.",
-  "rollback_strategy": "Git revert the commit, or remove the BarChart3 usage from the table header.",
-  "governance_approval": true,
-  "data_loss": false,
-  "related_adr": []
-}          
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm relative flex flex-col flex-1 min-h-0 mt-4">
+        <div className="flex-1 overflow-auto rounded-t-xl">
+          <InventoryTable 
+            filteredData={h.filteredData}
+            dataLength={h.data.length}
+            selectedSkus={selectedSkus}
+            selectedRow={selectedRow}
+            setSelectedRow={setSelectedRow}
+            toggleAllSkus={toggleAllSkus}
+            toggleSku={toggleSku}
+            totals={h.totals}
+          />
+        </div>
+      </div>
+
+      {/* Selected Item Details */}
+      {selectedRow && (
+        <StockDetailModal 
+          selectedRow={selectedRow}
+          filteredRolls={filteredRolls}
+          onRollClick={onRollClick}
+          onExportExcel={doExportModalToExcel}
+          onDeleteProductGroup={handleDeleteProductGroup}
+          onClose={() => setSelectedRow(null)}
+          agingFilter={agingFilter}
+          setAgingFilter={setAgingFilter}
+          importQty={importQty}
+          setImportQty={setImportQty}
+          importQuick={importQuick}
+          setImportQuick={setImportQuick}
+          importing={importing}
+          onImportGoods={handleImportGoods}
+          importedBatch={importedBatch}
+          showImportForm={showImportForm}
+          setShowImportForm={setShowImportForm}
+        />
+      )}
+
+    </div>
+  );
+};
+
+export default InventorySummaryTab;

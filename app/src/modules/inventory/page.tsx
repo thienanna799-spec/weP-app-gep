@@ -2,8 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { 
   Search, Plus, QrCode, History, MapPin, 
-  ClipboardCheck, PackageCheck, ChevronRight,
-  BarChart3, Layers, PackagePlus, Download, Ruler,
+  ClipboardCheck, BarChart3, Layers, PackagePlus, Download, Ruler,
   X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -17,10 +16,10 @@ import { ProductRoll, RollStatus, InventorySummary } from './types';
 import { formatDate } from '../../utils/format';
 import InventorySummaryTab from './components/InventorySummaryTab';
 import InventoryOperationsTab from './components/InventoryOperationsTab';
-import ManualImportTab from './components/ManualImportTab';
 import WarehouseMap3D from './components/WarehouseMap3D';
 import StorageAreaManagement from './components/StorageAreaManagement';
 import RollDetailModal from './components/RollDetailModal';
+import { CatalogModal } from './components/CatalogModal';
 import { InventoryFilterBar } from './components/InventoryFilterBar';
 import { InventoryRollsTable } from './components/InventoryRollsTable';
 import { inventoryService } from './services/inventory.service';
@@ -39,8 +38,6 @@ const InventoryPage: React.FC = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedRoll, setSelectedRoll] = useState<ProductRoll | null>(null);
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
-
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const [headerPortal, setHeaderPortal] = useState<HTMLElement | null>(null);
 
@@ -71,7 +68,7 @@ const InventoryPage: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="h-[calc(100vh-90px)] flex flex-col overflow-hidden">
 
 
 
@@ -101,7 +98,7 @@ const InventoryPage: React.FC = () => {
       {activeTab === 'storage' && <StorageAreaManagement />}
 
       {activeTab === 'stock' && (
-        <div className="space-y-4">
+        <div className="flex-1 min-h-0 flex flex-col">
           <InventorySummaryTab rolls={rolls} onRollClick={handleShowDetail} actionButtons={inventoryActionButtons} />
         </div>
       )}
@@ -109,34 +106,12 @@ const InventoryPage: React.FC = () => {
       <RollDetailModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} roll={selectedRoll} onTransfer={() => setIsTransferOpen(true)} />
 
       {/* Catalog & Bulk Import Modal */}
-      {isCatalogModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50">
-              <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                <PackagePlus className="w-6 h-6 text-violet-600" />
-                Khai báo Hàng loạt
-              </h2>
-              <button onClick={() => setIsCatalogModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-colors">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50">
-              <ManualImportTab />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg shadow-green-200 flex items-center gap-2 animate-in slide-in-from-bottom-5">
-          <PackageCheck className="w-5 h-5" />
-          <span className="font-bold">{toastMessage}</span>
-        </div>
-      )}
+      <CatalogModal 
+        isOpen={isCatalogModalOpen} 
+        onClose={() => setIsCatalogModalOpen(false)} 
+      />
     </div>
   );
 };
 
-export 
+export default InventoryPage;

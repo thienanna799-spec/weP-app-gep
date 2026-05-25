@@ -103,7 +103,6 @@ const InlineInvoiceReview: React.FC<InlineInvoiceReviewProps> = ({
               <th className="px-3 py-2.5 text-center w-10">#</th>
               <th className="px-3 py-2.5">Sản phẩm</th>
               <th className="px-3 py-2.5 text-center w-16">SL</th>
-              <th className="px-3 py-2.5 text-center w-16">ĐVT</th>
               <th className="px-3 py-2.5 text-right w-24">Đơn giá</th>
               <th className="px-3 py-2.5 text-right w-24">Thành tiền</th>
             </tr>
@@ -114,7 +113,6 @@ const InlineInvoiceReview: React.FC<InlineInvoiceReviewProps> = ({
                 <td className="px-3 py-2 text-center text-xs text-slate-400">{item.no}</td>
                 <td className="px-3 py-2 text-sm font-semibold text-slate-800">{item.sku || item.productName}</td>
                 <td className="px-3 py-2 text-center text-sm">{item.quantity}</td>
-                <td className="px-3 py-2 text-center text-xs text-slate-500">{item.unit}</td>
                 <td className="px-3 py-2 text-right text-xs font-mono text-slate-600">{formatCurrency(item.unitPrice)}</td>
                 <td className="px-3 py-2 text-right text-sm font-bold text-slate-800">{formatCurrency(item.amount)}</td>
               </tr>

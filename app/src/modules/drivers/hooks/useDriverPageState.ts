@@ -8,7 +8,7 @@ import { vehicleService } from '../services/vehicle.service';
 import { useSocket } from '../../../hooks/useSocket';
 import { Driver, Vehicle } from '../types';
 
-export type ActiveTab = 'drivers' | 'vehicles' | 'map' | 'logs' | 'stats';
+export type ActiveTab = 'drivers' | 'vehicles' | 'map' | 'logs' | 'stats' | 'ocr-audit';
 
 export function useDriverPageState() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('drivers');

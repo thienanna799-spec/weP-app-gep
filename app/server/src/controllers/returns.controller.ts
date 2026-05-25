@@ -8,9 +8,11 @@
 import { Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
+import { OrderStatus, RollStatus } from '../types/enums.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 import { sendTelegramMessage } from '../services/telegram.service.js';
+import { recordReturnEvent } from '../services/returnTracking.service.js';
 
 function emitSync(req: AuthRequest, event: string, payload: any) {
   const io = req.app.get('io');
@@ -125,6 +127,14 @@ export const createReturnRequest = asyncHandler(async (req: AuthRequest, res: Re
     include: { order: { select: { code: true, customerName: true } } },
   });
 
+  await recordReturnEvent(rtn.id, {
+    actionType: 'CREATE',
+    action: `Tạo yêu cầu hoàn trả ${rtn.code} cho đơn ${rtn.order.code}`,
+    operator: req.user!.name || req.user!.uid,
+    toStatus: 'pending',
+    metadata: { type, reason, orderId },
+  });
+
   // Notify customer via Telegram
   const chatId = order.customer?.telegramChatId;
   if (chatId) {
@@ -161,6 +171,14 @@ export const approveReturn = asyncHandler(async (req: AuthRequest, res: Response
     },
   });
 
+  await recordReturnEvent(id, {
+    actionType: 'APPROVE',
+    action: `Phê duyệt yêu cầu hoàn trả`,
+    operator: req.user!.name || req.user!.uid,
+    fromStatus: rtn.status,
+    toStatus: 'approved',
+  });
+
   emitSync(req, 'return_updated', { returnId: id });
   sendSuccess(res, updated, 200, 'Đã duyệt yêu cầu hoàn trả');
 });
@@ -182,6 +200,15 @@ export const rejectReturn = asyncHandler(async (req: AuthRequest, res: Response)
       processedByName: req.user!.name || req.user!.email,
       resolvedAt: new Date(),
     },
+  });
+
+  await recordReturnEvent(id, {
+    actionType: 'REJECT',
+    action: `Từ chối yêu cầu hoàn trả`,
+    operator: req.user!.name || req.user!.uid,
+    fromStatus: rtn.status,
+    toStatus: 'rejected',
+    note: reason || 'Bị từ chối',
   });
 
   emitSync(req, 'return_updated', { returnId: id });
@@ -263,7 +290,7 @@ export const resolveReturn = asyncHandler(async (req: AuthRequest, res: Response
         customerAddress: o.customerAddress,
         quantity: o.quantity,
         totalRevenue: 0, // No additional charge for reship
-        status: 'nhap' as any,
+        status: OrderStatus.nhap,
         createdBy: req.user!.uid,
         createdByName: req.user!.name || req.user!.email,
         note: `Đơn giao lại từ RTN ${rtn.code} (đơn gốc: ${o.code})`,
@@ -283,7 +310,7 @@ export const resolveReturn = asyncHandler(async (req: AuthRequest, res: Response
         // Update rolls status and unassign from order
         await tx.productRoll.updateMany({
           where: { orderId: rtn.orderId },
-          data: { status: newStatus as any, orderId: null },
+          data: { status: newStatus as RollStatus, orderId: null },
         });
 
         // Restore tonKho for ImportBatch if any
@@ -312,6 +339,16 @@ export const resolveReturn = asyncHandler(async (req: AuthRequest, res: Response
   const updated = await prisma.returnRequest.update({
     where: { id },
     data: updateData,
+  });
+
+  await recordReturnEvent(id, {
+    actionType: 'RESOLVE',
+    action: `Giải quyết yêu cầu hoàn trả (${resolution})`,
+    operator: req.user!.name || req.user!.uid,
+    fromStatus: rtn.status,
+    toStatus: 'resolved',
+    note: refundNote,
+    metadata: { resolution, refundAmount, refundMethod, reshipOrderId: updateData.reshipOrderId },
   });
 
   // Notify customer

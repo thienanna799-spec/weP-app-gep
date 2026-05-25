@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import { Material, MaterialGroup, MaterialUnit } from '../types';
+import { materialsService } from '../services/materials.service';
 
 const MATERIAL_GROUPS: MaterialGroup[] = [
   'Hạt nhựa', 'Màng PE', 'Giấy carton', 'Băng keo', 'Tem QR', 
@@ -16,14 +18,54 @@ interface MaterialFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   editingMaterial: Material | null;
-  formData: Partial<Material>;
-  setFormData: (data: Partial<Material>) => void;
-  onSave: () => void;
+  onSuccess: () => void;
 }
 
 const MaterialFormModal: React.FC<MaterialFormModalProps> = ({
-  isOpen, onClose, editingMaterial, formData, setFormData, onSave
+  isOpen, onClose, editingMaterial, onSuccess
 }) => {
+  const { t } = useTranslation();
+  const [formData, setFormData] = useState<Partial<Material>>({
+    code: '', name: '', group: 'Hạt nhựa', unit: 'kg',
+    currentStock: 0, minStock: 10, purchasePrice: 0,
+    supplier: '', warehouseLocation: '', status: 'còn hàng',
+    notes: '', imageUrl: ''
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (editingMaterial) {
+        setFormData(editingMaterial);
+      } else {
+        setFormData({
+          code: `MAT-${Date.now().toString().slice(-6)}`,
+          name: '', group: 'Hạt nhựa', unit: 'kg',
+          currentStock: 0, minStock: 10, purchasePrice: 0,
+          supplier: '', warehouseLocation: '', status: 'còn hàng',
+          notes: '', imageUrl: ''
+        });
+      }
+    }
+  }, [isOpen, editingMaterial]);
+
+  const handleSaveMaterial = async () => {
+    setSaving(true);
+    try {
+      if (editingMaterial) {
+        await materialsService.update(editingMaterial.id, formData);
+      } else {
+        await materialsService.create(formData as Omit<Material, 'id' | 'updatedAt'>);
+      }
+      onSuccess();
+      onClose();
+    } catch (err) {
+      alert(t('materials.save_error') + ': ' + err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -32,7 +74,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Hủy</Button>
-          <Button onClick={onSave}>Lưu thông tin</Button>
+          <Button onClick={handleSaveMaterial} disabled={saving}>
+            {saving ? 'Đang lưu...' : 'Lưu thông tin'}
+          </Button>
         </>
       }
     >
@@ -40,13 +84,13 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({
         <div className="space-y-4">
           <Input 
             label="Mã nguyên liệu" 
-            value={formData.code} 
+            value={formData.code || ''} 
             onChange={(e: any) => setFormData({...formData, code: e.target.value})} 
             placeholder="VD: nhựa-001"
           />
           <Input 
             label="Tên nguyên liệu" 
-            value={formData.name} 
+            value={formData.name || ''} 
             onChange={(e: any) => setFormData({...formData, name: e.target.value})} 
             placeholder="VD: Hạt nhựa tái sinh LDPE"
           />
@@ -54,7 +98,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({
             <label className="text-sm font-medium text-gray-900">Nhóm nguyên liệu</label>
             <select 
               className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-colors"
-              value={formData.group}
+              value={formData.group || 'Hạt nhựa'}
               onChange={(e) => setFormData({...formData, group: e.target.value as MaterialGroup})}
             >
               {MATERIAL_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
@@ -65,7 +109,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({
               <label className="text-sm font-medium text-gray-900">Đơn vị tính</label>
               <select 
                 className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-colors"
-                value={formData.unit}
+                value={formData.unit || 'kg'}
                 onChange={(e) => setFormData({...formData, unit: e.target.value as MaterialUnit})}
               >
                 {MATERIAL_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
@@ -74,7 +118,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({
             <Input 
               label="Giá nhập / đơn vị" 
               type="number" 
-              value={formData.purchasePrice} 
+              value={formData.purchasePrice || 0} 
               onChange={(e: any) => setFormData({...formData, purchasePrice: Number(e.target.value)})}
             />
           </div>
@@ -85,25 +129,25 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({
             <Input 
               label="Tồn hiện tại" 
               type="number" 
-              value={formData.currentStock} 
+              value={formData.currentStock || 0} 
               onChange={(e: any) => setFormData({...formData, currentStock: Number(e.target.value)})}
             />
             <Input 
               label="Tồn tối thiểu" 
               type="number" 
-              value={formData.minStock} 
+              value={formData.minStock || 0} 
               onChange={(e: any) => setFormData({...formData, minStock: Number(e.target.value)})}
             />
           </div>
           <Input 
             label="Nhà cung cấp" 
-            value={formData.supplier} 
+            value={formData.supplier || ''} 
             onChange={(e: any) => setFormData({...formData, supplier: e.target.value})}
             placeholder="Tên công ty / đầu mối"
           />
           <Input 
             label="Vị trí lưu kho" 
-            value={formData.warehouseLocation} 
+            value={formData.warehouseLocation || ''} 
             onChange={(e: any) => setFormData({...formData, warehouseLocation: e.target.value})}
             placeholder="VD: Kệ A-01"
           />
@@ -111,7 +155,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({
             <label className="text-sm font-medium text-gray-900">Ghi chú</label>
             <textarea 
               className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-colors min-h-[80px]"
-              value={formData.notes}
+              value={formData.notes || ''}
               onChange={(e) => setFormData({...formData, notes: e.target.value})}
             />
           </div>

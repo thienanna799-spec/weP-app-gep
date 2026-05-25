@@ -9,6 +9,7 @@ import { prisma } from '../lib/prisma.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
+import { recordSystemAudit } from '../services/systemAudit.service.js';
 
 /** GET /api/customers?search=&type=&active=&platform=&status=&group=&boss= */
 export const getCustomers = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -162,15 +163,14 @@ export const createCustomer = asyncHandler(async (req: AuthRequest, res: Respons
   });
 
   // Log activity
-  await prisma.userActivityLog.create({
-    data: {
-      userId: req.user!.uid,
-      email: req.user!.email,
-      action: 'Tạo khách hàng',
-      module: 'Khách hàng',
-      referenceId: customer.id,
-      description: `Tạo khách hàng: ${customer.name} (${customer.code})`,
-    },
+  await recordSystemAudit({
+    userId: req.user!.uid,
+    email: req.user!.email || 'system',
+    action: 'CREATE',
+    module: 'CUSTOMER',
+    referenceId: customer.id,
+    description: `Tạo khách hàng: ${customer.name} (${customer.code})`,
+    newValue: customer
   });
 
   sendSuccess(res, customer, 201, 'Customer created');
@@ -189,9 +189,21 @@ export const updateCustomer = asyncHandler(async (req: AuthRequest, res: Respons
     delete updateData.code;
   }
 
+  const oldCustomer = await prisma.customer.findUnique({ where: { id: req.params.id } });
   const customer = await prisma.customer.update({
     where: { id: req.params.id },
     data: updateData,
+  });
+
+  await recordSystemAudit({
+    userId: req.user!.uid,
+    email: req.user!.email || 'system',
+    action: 'UPDATE',
+    module: 'CUSTOMER',
+    referenceId: customer.id,
+    description: `Cập nhật thông tin khách hàng ${customer.name}`,
+    oldValue: oldCustomer,
+    newValue: customer
   });
 
   sendSuccess(res, customer, 200, 'Customer updated');
@@ -200,9 +212,20 @@ export const updateCustomer = asyncHandler(async (req: AuthRequest, res: Respons
 /** DELETE /api/customers/:id */
 export const deleteCustomer = asyncHandler(async (req: AuthRequest, res: Response) => {
   // Soft delete — just deactivate
+  const oldCustomer = await prisma.customer.findUnique({ where: { id: req.params.id } });
   const customer = await prisma.customer.update({
     where: { id: req.params.id },
     data: { isActive: false },
+  });
+
+  await recordSystemAudit({
+    userId: req.user!.uid,
+    email: req.user!.email || 'system',
+    action: 'DELETE',
+    module: 'CUSTOMER',
+    referenceId: customer.id,
+    description: `Xóa/Vô hiệu hóa khách hàng ${customer.name}`,
+    oldValue: oldCustomer
   });
 
   sendSuccess(res, customer, 200, 'Customer deactivated');

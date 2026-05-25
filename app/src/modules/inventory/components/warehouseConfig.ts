@@ -45,4 +45,33 @@ export interface WarehouseConfig {
 // ── Default Config ─────────────────────────────────────
 const DEFAULT_CONFIG: WarehouseConfig = {
   width: 10,
-  
+  length: 10,
+  area: 100,
+  slotSize: 0.36,
+  zones: [],
+  facilities: [],
+  thresholds: {
+    warning: 70,
+    danger: 85,
+    critical: 95
+  }
+};
+
+export const WAREHOUSE = DEFAULT_CONFIG;
+
+export interface WarehouseRoll {
+  id: string;
+  code?: string;
+  status: string;
+  positionArea?: string;
+}
+
+export const STATUS_COLORS: Record<string, { bg: string; text: string; border: string; label: string }> = {
+  'trong_kho': { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200', label: 'Trong kho' },
+  'da_giu_cho_don': { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200', label: 'Đã giữ chỗ' },
+  'da_xuat_kho': { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Đã xuất kho' },
+  'loi_hong': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', label: 'Lỗi / Hỏng' },
+  'dang_san_xuat': { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', label: 'Đang sản xuất' },
+};
+
+export default DEFAULT_CONFIG;

@@ -120,4 +120,10 @@ const RollDetailModal: React.FC<RollDetailModalProps> = ({ isOpen, onClose, roll
             <ArrowRightLeft className="w-4 h-4" />
             <span>Chuyển vị trí</span>
           </Button>
-      
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+export default RollDetailModal;

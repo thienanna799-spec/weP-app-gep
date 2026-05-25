@@ -77,13 +77,17 @@ const OrderCreateModal: React.FC<Props> = ({ isOpen, onClose, onSave, saving }) 
           <div className="space-y-3">
             <div className="bg-slate-50 rounded-xl p-3">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Cấu hình & Thanh toán</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 mb-2">
                 <div><label className="text-[10px] text-slate-500 font-bold">Ưu tiên</label>
                   <select value={h.formData.priority||'trung_binh'} onChange={e=>h.setFormData(p=>({...p,priority:e.target.value as any}))} className={sel}>
                     <option value="thap">Thấp</option><option value="trung_binh">TB</option><option value="cao">Cao</option><option value="khan_cap">Khẩn</option></select></div>
                 <div><label className="text-[10px] text-slate-500 font-bold">Phương thức</label>
                   <select value={(h.formData as any).paymentMethod||'bank_transfer'} onChange={e=>h.setFormData(p=>({...p,paymentMethod:e.target.value as any}))} className={sel}>
                     <option value="cod">COD</option><option value="bank_transfer">CK</option><option value="credit">Công nợ</option></select></div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div><label className="text-[10px] text-slate-500 font-bold">Hạn chót giao hàng</label>
+                  <Input type="date" value={h.formData.deliveryDeadline ? new Date(h.formData.deliveryDeadline).toISOString().split('T')[0] : ''} onChange={(e:any)=>h.setFormData(p=>({...p,deliveryDeadline:e.target.value ? new Date(e.target.value).toISOString() : undefined}))}/></div>
                 <div><label className="text-[10px] text-slate-500 font-bold">Ghi chú</label>
                   <Input value={h.formData.note||''} onChange={(e:any)=>h.setFormData(p=>({...p,note:e.target.value}))}/></div>
               </div>

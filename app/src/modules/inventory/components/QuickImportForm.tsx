@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { PackagePlus, Zap, Loader2, Printer } from 'lucide-react';
-import { printBatchQRs } from '../utils/printQR';
+import { printBatchQRs } from '../../../utils/printQR';
 
 interface QuickImportFormProps {
   importQty: string;

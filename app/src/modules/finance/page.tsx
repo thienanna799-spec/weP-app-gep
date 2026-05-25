@@ -5,7 +5,8 @@
  * Each tab is a separate component file.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { ArrowUpCircle, ArrowDownCircle, BarChart3, ShoppingCart, FileText, Users, DollarSign, Truck, CalendarDays, Package } from 'lucide-react';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { useFinanceData } from './hooks/useFinanceData';
@@ -39,43 +40,41 @@ const TABS: { key: TabKey; label: string; icon: any }[] = [
 const FinancePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const data = useFinanceData();
+  const [headerPortal, setHeaderPortal] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setHeaderPortal(document.getElementById('page-header-portal'));
+  }, []);
 
   if (data.loading) return <LoadingSpinner />;
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Quản lý Tài chính</h2>
-          <p className="text-gray-500 text-sm">Theo dõi dòng tiền, công nợ và lợi nhuận</p>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg">
-          <CalendarDays className="w-3.5 h-3.5" />
-          <span className="font-medium">{data.dateLabel}</span>
-        </div>
-      </div>
-
-      {/* Date Filter */}
+  const dateFilterPortal = (
+    <div className="w-full flex justify-end">
       <DateFilterBar
         datePreset={data.datePreset} setDatePreset={data.setDatePreset}
+        dateLabel={data.dateLabel}
         customFrom={data.customFrom} setCustomFrom={data.setCustomFrom}
         customTo={data.customTo} setCustomTo={data.setCustomTo}
       />
+    </div>
+  );
 
-      {/* KPI Cards */}
-      <FinanceKPICards stats={data.stats} />
+  return (
+    <div className="space-y-3">
+      {headerPortal ? ReactDOM.createPortal(dateFilterPortal, headerPortal) : dateFilterPortal}
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 gap-1 overflow-x-auto">
+      <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-100 gap-1 overflow-x-auto w-full">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
-            className={`pb-3 px-3 text-sm font-medium transition-colors relative flex items-center gap-2 whitespace-nowrap ${activeTab === t.key ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
-            <t.icon className="w-4 h-4" />{t.label}
-            {activeTab === t.key && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />}
+            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all relative flex items-center gap-1.5 whitespace-nowrap ${activeTab === t.key ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>
+            <t.icon className="w-3.5 h-3.5" />{t.label}
           </button>
         ))}
       </div>
+
+      {/* KPI Cards */}
+      <FinanceKPICards stats={data.stats} />
 
       {/* Tab Content */}
       {activeTab === 'overview' && <FinanceOverviewTab stats={data.stats} allTransactions={data.allTransactions} />}

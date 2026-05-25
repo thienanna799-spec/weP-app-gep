@@ -1,0 +1,37 @@
+{
+  "event_id": "2026-05-18-001",
+  "timestamp": "2026-05-18T04:39:03.083Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "6510ec7",
+  "type": "FEATURE",
+  "severity": "MEDIUM",
+  "title": "Dynamic Customer Pricing in Inventory",
+  "why": "Price per unit is not static and depends on individual customers. Using a single static field caused incorrect data representation.",
+  "root_cause": "The pricePerUnit field was designed as a static attribute of the product rather than a relation to CustomerPricing",
+  "solution": "Added GET /api/inventory/product-pricing/:subSku. Replaced manual pricePerUnit edit with a dynamic popover showing how many customers have specific pricing for the subSku, along with their exact prices.",
+  "blast_radius": [
+    "inventory-stock-calculation",
+    "product-roll-status",
+    "order-reservation",
+    "qr-scanner"
+  ],
+  "affected_files": [
+    "app/server/src/router.ts",
+    "app/server/src/controllers/stock-sync.controller.ts",
+    "app/src/modules/inventory/services/inventory.service.ts",
+    "app/src/modules/inventory/components/StockDetailModal.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "inventory",
+    "pricing",
+    "ui"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "Always consider domain cross-overs (like CRM pricing vs Inventory) when designing data models",
+  "rollback_strategy": "Git revert changes",
+  "governance_approval": true,
+  "data_loss": false,
+  "related_adr": []
+}

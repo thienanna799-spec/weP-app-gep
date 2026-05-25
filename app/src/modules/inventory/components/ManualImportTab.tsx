@@ -133,5 +133,35 @@ const ManualImportTab: React.FC = () => {
                       <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{batch.specification || '—'}</td>
                       <td className="px-3 py-2.5 text-slate-500 max-w-[150px] truncate">{batch.otherSpecs || '—'}</td>
                       <td className="px-3 py-2.5 text-right font-mono text-slate-700 whitespace-nowrap">{batch.costPrice != null ? batch.costPrice.toLocaleString('vi-VN') : '—'}</td>
-                      <td className="px-3 py-2.5 text-center"><span className="font-bold text-slate-900">{batch.quantity}</span></td>
-     
+                      <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap text-[10px]">{formatDate(batch.createdAt)}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        <span title={`Trong kho: ${s.inStock} | Chờ scan: ${s.pending} | Lỗi: ${s.defective}`}
+                          className={`inline-flex items-center justify-center p-1 rounded-full ${
+                            allDone ? 'bg-green-100 text-green-600' : 
+                            s.pending === s.total ? 'bg-slate-100 text-slate-400' : 
+                            'bg-amber-100 text-amber-600'
+                          }`}>
+                          {allDone ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </Card>
+
+      {/* Selected Batch Details */}
+      {h.activeBatch && (
+        <BatchDetailPanel 
+          activeBatch={h.activeBatch}
+          getBatchStatusSummary={h.getBatchStatusSummary}
+        />
+      )}
+    </div>
+  );
+};
+
+export default ManualImportTab;

@@ -294,4 +294,127 @@ export async function runPostTaskHook(input: PostTaskInput): Promise<{
     solution: input.solution,
     blast_radius,
     affected_files: input.affected_files,
-    affected_nod
+    affected_nodes: input.affected_nodes,
+    affected_domains: input.affected_domains,
+    caused_by: input.caused_by,
+    related_incidents: input.related_incidents,
+    prevention: input.prevention,
+    rollback_strategy: input.rollback_strategy,
+    governance_approval: input.governance_approval,
+    data_loss: input.data_loss,
+    data_loss_note: input.data_loss_note,
+  };
+
+  const eventPath = writeEvent(event);
+  console.log(`[PostTaskHook] ✅ MEMORY_SYNCHRONIZED`);
+
+  // ── Step 4: ADR Engine (Check if architectural) ──
+  let adrCreated: string | null = null;
+  const adrReason = suggestADR(input.affected_files, input.affected_domains);
+  if (adrReason && analysis.actions.createADR) {
+    const nextNum = getNextADRNumber();
+    adrCreated = generateADRDraft(nextNum, input.title, input.affected_domains, input.why, input.solution);
+    console.log(`[PostTaskHook] 🏗️  ADR Generated: ${adrCreated} (Reason: ${adrReason})`);
+  }
+
+  // ── Step 5: Spider Web Knowledge Update (Case 2 & 3) ──
+  let docsCreated: string[] = [];
+  if (analysis.actions.updateSpiderWeb) {
+    console.log(`[PostTaskHook] 🕸️  Updating Spider Web Knowledge...`);
+    appendToSpiderWeb(input.title, input.affected_domains, analysis.reason);
+    console.log(`[PostTaskHook] ✅ SPIDER_WEB_UPDATED`);
+  }
+  
+  if (analysis.actions.createFlowDoc && analysis.actions.newDocSuggestions.length > 0) {
+    console.log(`[PostTaskHook] 📄  Creating missing flow docs...`);
+    const paths = executeDocCreation(analysis.actions.newDocSuggestions);
+    docsCreated.push(...paths);
+  }
+
+  // ── Step 6: Graph Hydration ──
+  let hydrationTriggered = false;
+  if (!input.skip_hydration) {
+    hydrationTriggered = triggerIncrementalHydration(eventPath);
+  }
+
+  // ── Step 7: Governance Check ──
+  const governancePassed = runGovernanceValidation(eventPath, input.affected_domains);
+
+  console.log(`\n[PostTaskHook] 🎉 Task Lifecycle COMPLETE`);
+  console.log(`--------------------------------------------------`);
+  console.log(`- Impact Case:    ${analysis.impactCase}`);
+  console.log(`- Memory Event:   ${eventPath}`);
+  console.log(`- ADR Created:    ${adrCreated || 'none'}`);
+  console.log(`- Docs Updated:   ${docsCreated.length > 0 ? docsCreated.join(', ') : 'none'}`);
+  console.log(`- Graph Hydrated: ${hydrationTriggered}`);
+  console.log(`- Gov Passed:     ${governancePassed}`);
+  console.log(`--------------------------------------------------\n`);
+
+  return {
+    event_path: eventPath,
+    adr_created: adrCreated,
+    hydration_triggered: hydrationTriggered,
+    governance_passed: governancePassed,
+    docs_created: docsCreated,
+    impact_case: analysis.impactCase,
+  };
+}
+
+// ────────────────────────────────────────────────
+// CLI ENTRY POINT
+// ────────────────────────────────────────────────
+import { parseArgs } from 'util';
+
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1].endsWith('post-task-hook.ts')) {
+  const { values } = parseArgs({
+    args: process.argv.slice(2),
+    options: {
+      type: { type: 'string' },
+      title: { type: 'string' },
+      why: { type: 'string' },
+      root_cause: { type: 'string' },
+      solution: { type: 'string' },
+      files: { type: 'string' },
+      domains: { type: 'string' },
+      nodes: { type: 'string' },
+      severity: { type: 'string' },
+      caused_by: { type: 'string' },
+      related_incidents: { type: 'string' },
+      prevention: { type: 'string' },
+      rollback_strategy: { type: 'string' },
+      governance_approval: { type: 'boolean' },
+      data_loss: { type: 'boolean' },
+      data_loss_note: { type: 'string' },
+      skip_hydration: { type: 'boolean' },
+    },
+    strict: false,
+  });
+
+  if (!values.type || !values.title || !values.domains || !values.files) {
+    console.error("Usage: tsx post-task-hook.ts --type=BUG_FIX --title='...' --domains='...' --files='...'");
+    process.exit(1);
+  }
+
+  runPostTaskHook({
+    type: values.type as MemoryEvent['type'],
+    title: values.title as string,
+    why: values.why as string || 'Not provided',
+    root_cause: values.root_cause as string || 'Not provided',
+    solution: values.solution as string || 'Not provided',
+    affected_files: (values.files as string).split(',').map(s => s.trim()),
+    affected_domains: (values.domains as string).split(',').map(s => s.trim()),
+    affected_nodes: values.nodes ? (values.nodes as string).split(',').map(s => s.trim()) : undefined,
+    severity: values.severity as MemoryEvent['severity'],
+    caused_by: values.caused_by ? (values.caused_by as string).split(',').map(s => s.trim()) : undefined,
+    related_incidents: values.related_incidents ? (values.related_incidents as string).split(',').map(s => s.trim()) : undefined,
+    prevention: values.prevention as string,
+    rollback_strategy: values.rollback_strategy as string,
+    governance_approval: values.governance_approval === true || values.governance_approval === 'true',
+    data_loss: values.data_loss === true || values.data_loss === 'true',
+    data_loss_note: values.data_loss_note as string,
+    skip_hydration: values.skip_hydration as boolean,
+  }).catch(err => {
+    console.error("Failed to run post task hook:", err);
+    process.exit(1);
+  });
+}

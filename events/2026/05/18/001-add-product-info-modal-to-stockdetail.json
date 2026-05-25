@@ -1,0 +1,33 @@
+{
+  "event_id": "2026-05-18-001",
+  "timestamp": "2026-05-18T04:17:53.582Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "6510ec7",
+  "type": "FEATURE",
+  "severity": "LOW",
+  "title": "Add Product Info Modal to StockDetail",
+  "why": "User requested a settings gear icon to view all extended product fields within the detail modal",
+  "root_cause": "Extended fields were added to the main table but not accessible in the detail modal",
+  "solution": "Added a new settings button and a modal overlay displaying all StockRow properties",
+  "blast_radius": [
+    "inventory-stock-calculation",
+    "product-roll-status",
+    "order-reservation",
+    "qr-scanner"
+  ],
+  "affected_files": [
+    "app/src/modules/inventory/components/StockDetailModal.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "inventory",
+    "ui"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "Ensure new data fields are propagated to all relevant detail views",
+  "rollback_strategy": "Git revert StockDetailModal.tsx changes",
+  "governance_approval": true,
+  "data_loss": false,
+  "related_adr": []
+}

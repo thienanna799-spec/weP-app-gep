@@ -21,7 +21,7 @@ taskkill /F /IM cloudflared.exe >NUL 2>&1
 :: HISTORY: EVT-2026-05-14 — MySQL crash-loop because WSL2 only mounted 9/40+ files from E:\mysql_data.
 echo [PRE] Resetting WSL2 mount layer...
 wsl --shutdown >NUL 2>&1
-timeout /t 3 /nobreak >NUL
+ping 127.0.0.1 -n 4 >nul
 echo       WSL2 reset complete.
 
 :: Step 1: Check Docker Installation
@@ -49,7 +49,7 @@ echo [2/7] Waiting for Docker daemon to be ready...
 docker info >NUL 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo       Docker daemon not ready yet, waiting 5 seconds...
-    timeout /t 5 /nobreak >NUL
+    ping 127.0.0.1 -n 6 >nul
     goto wait_docker
 )
 echo       Docker daemon is ready!
@@ -66,8 +66,8 @@ if "%HAS_MYSQL_IMAGE%"=="" (
 :: [SSD Portability Fix] Remove orphan containers from previous machine before starting
 echo       [SSD Fix] Checking for orphan containers from previous machine...
 docker rm -f bocchongsoc_db >NUL 2>&1
-docker rm -f bocchongsoc_memgraph >NUL 2>&1
-docker rm -f bocchongsoc_chroma >NUL 2>&1
+docker rm -f gep_memgraph >NUL 2>&1
+docker rm -f gep_chroma >NUL 2>&1
 echo       [SSD Fix] Orphan containers cleared. Starting fresh...
 docker-compose up -d
 echo       MySQL container started!
@@ -76,7 +76,7 @@ echo       Waiting for MySQL to be healthy...
 :wait_mysql
 docker inspect --format="{{.State.Health.Status}}" bocchongsoc_db 2>NUL | find "healthy" >NUL
 if %ERRORLEVEL% NEQ 0 (
-    timeout /t 3 /nobreak >NUL
+    ping 127.0.0.1 -n 4 >nul
     goto wait_mysql
 )
 echo       MySQL is healthy!
@@ -121,4 +121,8 @@ start "OpenClaw Telegram Bot" cmd /k "npm run dev"
 :: Step 7: Start AI Engineering OS Watcher
 echo [7/7] Starting AI Memory Watcher...
 cd /d "%PROJECT_DIR%app\ai\automation"
-if 
+if not exist "node_modules\" (
+    echo       [First Boot] automation node_modules not found. Installing dependencies...
+    call npm install
+)
+start "AI Memory Watcher" cmd /k "npm run watch"

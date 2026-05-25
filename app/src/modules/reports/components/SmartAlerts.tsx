@@ -20,15 +20,7 @@ const COLORS: Record<string, { bg: string; border: string; icon: string; text: s
 
 const SmartAlerts: React.FC<Props> = ({ alerts }) => {
   if (!alerts || alerts.length === 0) {
-    return (
-      <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-center gap-3">
-        <div className="p-2 bg-green-100 rounded-xl"><AlertCircle className="w-5 h-5 text-green-600" /></div>
-        <div>
-          <p className="text-sm font-bold text-green-800">Không có cảnh báo</p>
-          <p className="text-xs text-green-600">Tất cả chỉ số hoạt động đều trong ngưỡng an toàn.</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

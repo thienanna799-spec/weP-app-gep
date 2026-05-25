@@ -1,0 +1,27 @@
+{
+  "event_id": "2026-05-18-001",
+  "timestamp": "2026-05-18T03:36:33.017Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "6510ec7",
+  "type": "FEATURE",
+  "severity": "LOW",
+  "title": "Update Sidebar Toggle Icon",
+  "why": "UX improvement: Toggle button was a static menu icon, needed directional arrows",
+  "root_cause": "Static icon didn't convey toggle direction",
+  "solution": "Replaced Menu icon with ChevronLeft and ChevronRight based on isCollapsed state",
+  "blast_radius": [],
+  "affected_files": [
+    "app/src/components/layout/Sidebar.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "layout"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "Use dynamic contextual icons for toggle elements",
+  "rollback_strategy": "Git revert Sidebar.tsx toggle icon change",
+  "governance_approval": true,
+  "data_loss": false,
+  "related_adr": []
+}

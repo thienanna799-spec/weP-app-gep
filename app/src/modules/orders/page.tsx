@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import {
-  ShoppingCart, Plus, Search, Eye, CheckCircle2,
-  Clock, AlertCircle, TrendingUp, FileText, DollarSign
+  ShoppingCart, Plus, Search, CheckCircle2,
+  Clock, AlertCircle, TrendingUp
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Card from '../../components/ui/Card';
@@ -11,10 +12,10 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { useOrders } from './hooks/useOrders';
 import { useOrderActions } from './hooks/useOrderActions';
 import { UserProfile } from '../../types/user.types';
-import { formatDate } from '../../utils/format';
 import InvoicePreview from './components/InvoicePreview';
-import OrderDetailModal, { getStatusBadge, getPriorityBadge } from './components/OrderDetailModal';
+import OrderDetailModal from './components/OrderDetailModal';
 import OrderCreateModal from './components/OrderCreateModal';
+import OrdersTable from './components/OrdersTable';
 
 interface OrdersPageProps {
   profile: UserProfile;
@@ -23,14 +24,35 @@ interface OrdersPageProps {
 const OrdersPage: React.FC<OrdersPageProps> = ({ profile }) => {
   const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState<string>('All');
-  const { orders, loading, refetch } = useOrders(statusFilter);
+  const { orders, loading, refetch } = useOrders(); // Fetch all orders to keep KPI counts globally correct
   const [searchTerm, setSearchTerm] = useState('');
   const a = useOrderActions(profile, refetch);
 
-  const filteredOrders = orders.filter(o =>
-    (o.code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (o.customerName || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [headerPortal, setHeaderPortal] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setHeaderPortal(document.getElementById('page-header-portal'));
+  }, []);
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter(o => {
+      // Search term filter
+      const matchSearch = (o.code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (o.customerName || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Status filter
+      let matchStatus = true;
+      if (statusFilter !== 'All') {
+        if (statusFilter === 'da_duyet,dang_chuan_bi,cho_xuat_kho') {
+          matchStatus = ['da_duyet', 'dang_chuan_bi', 'cho_xuat_kho'].includes(o.status);
+        } else {
+          matchStatus = o.status === statusFilter;
+        }
+      }
+
+      return matchSearch && matchStatus;
+    });
+  }, [orders, searchTerm, statusFilter]);
 
   const kpis = useMemo(() => ({
     total: orders.length,
@@ -42,18 +64,34 @@ const OrdersPage: React.FC<OrdersPageProps> = ({ profile }) => {
 
   if (loading) return <LoadingSpinner />;
 
+  const topControlBar = (
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
+      <div className="flex-1 flex gap-2 sm:gap-4 max-w-3xl w-full">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input placeholder={t('orders.search_placeholder') || 'Tìm theo mã đơn, tên khách hàng...'} className="pl-10 h-10 w-full shadow-sm" value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)} />
+        </div>
+        <select className="h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm outline-none w-32 sm:w-48 shadow-sm font-medium text-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="All">{t('orders.all_orders') || 'Tất cả đơn'}</option>
+          <option value="nhap">{t('orders.draft') || 'Nháp'}</option>
+          <option value="cho_duyet">{t('orders.pending_approval') || 'Chờ duyệt'}</option>
+          <option value="da_duyet">{t('orders.approved') || 'Đã duyệt'}</option>
+          <option value="dang_chuan_bi">{t('orders.preparing') || 'Đang soạn/xuất'}</option>
+          <option value="cho_xuat_kho">{t('orders.ready_to_ship') || 'Chờ xuất kho'}</option>
+          <option value="dang_giao">{t('orders.in_delivery') || 'Đang giao'}</option>
+          <option value="hoan_thanh">{t('orders.completed') || 'Hoàn thành'}</option>
+          <option value="huy">{t('orders.cancelled') || 'Hủy'}</option>
+        </select>
+      </div>
+      <Button onClick={() => a.setIsFormOpen(true)} className="gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 shrink-0 h-10">
+        <Plus className="w-4 h-4" /><span>{t('orders.new_order') || 'Tạo đơn hàng mới'}</span>
+      </Button>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('orders.title')}</h2>
-          <p className="text-slate-500 text-sm font-medium">{t('orders.subtitle')}</p>
-        </div>
-        <Button onClick={() => a.setIsFormOpen(true)} className="gap-2 bg-indigo-600 shadow-lg shadow-indigo-100">
-          <Plus className="w-4 h-4" /><span>{t('orders.new_order')}</span>
-        </Button>
-      </div>
+      {headerPortal ? ReactDOM.createPortal(topControlBar, headerPortal) : topControlBar}
 
       {/* KPI Cards - click to filter */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -81,96 +119,40 @@ const OrdersPage: React.FC<OrdersPageProps> = ({ profile }) => {
         })}
       </div>
 
-      {/* Filter Bar */}
-      <Card className="p-4 bg-white shadow-sm flex flex-wrap gap-4 items-end">
-        <div className="flex-1 min-w-[240px]">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input placeholder={t('orders.search_placeholder')} className="pl-10 h-10" value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)} />
-          </div>
-        </div>
-        <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('common.status')}</label>
-          <select className="h-10 px-3 bg-slate-50 border border-slate-100 rounded-lg text-sm outline-none w-40" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="All">{t('orders.all_orders')}</option>
-            <option value="nhap">{t('orders.draft')}</option>
-            <option value="cho_duyet">{t('orders.pending_approval')}</option>
-            <option value="da_duyet">{t('orders.approved')}</option>
-            <option value="dang_chuan_bi">{t('orders.preparing')}</option>
-            <option value="cho_xuat_kho">{t('orders.ready_to_ship')}</option>
-            <option value="dang_giao">{t('orders.in_delivery')}</option>
-            <option value="hoan_thanh">{t('orders.completed')}</option>
-            <option value="huy">{t('orders.cancelled')}</option>
-          </select>
-        </div>
-      </Card>
-
       {/* Orders Table */}
       <Card className="overflow-hidden border-none shadow-md">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-50 border-b border-slate-100">
-              <tr className="text-slate-500 text-[11px] uppercase tracking-wider font-bold">
-                <th className="px-6 py-4">{t('orders.order_code_customer')}</th>
-                <th className="px-6 py-4">{t('orders.product_qty')}</th>
-                <th className="px-6 py-4">{t('orders.priority')}</th>
-                <th className="px-6 py-4 text-center">{t('common.status')}</th>
-                <th className="px-6 py-4 text-center">Thanh toán</th>
-                <th className="px-6 py-4">{t('common.created_at')}</th>
-                <th className="px-6 py-4 text-right"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {filteredOrders.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">{t('orders.no_orders')}</td></tr>
-              ) : (
-                filteredOrders.map(order => (
-                  <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                          <FileText className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900">#{order.code}</p>
-                          <p className="text-xs text-slate-500">{order.customerName}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-xs text-indigo-600 font-bold">{order.quantity} {t('common.rolls')}</p>
-                    </td>
-                    <td className="px-6 py-4">{getPriorityBadge(order.priority)}</td>
-                    <td className="px-6 py-4 text-center">{getStatusBadge(order.status)}</td>
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); a.handleTogglePayment(order); }}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer hover:scale-105 ${
-                          order.paymentStatus === 'da_thanh_toan'
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-red-50 text-red-500 hover:bg-red-100'
-                        }`}
-                      >
-                        <DollarSign className="w-3 h-3" />
-                        {order.paymentStatus === 'da_thanh_toan' ? 'Đã TT' : 'Chưa TT'}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-slate-500 font-mono italic">{formatDate(order.createdAt)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <Button size="sm" variant="secondary" className="px-2" onClick={() => a.fetchOrderDetails(order)} disabled={a.detailLoading && a.selectedOrder?.id === order.id}>
-                        {a.detailLoading && a.selectedOrder?.id === order.id ? <LoadingSpinner size="sm" /> : <Eye className="w-4 h-4" />}
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <OrdersTable 
+          orders={filteredOrders} 
+          onTogglePayment={a.handleTogglePayment} 
+          onViewDetails={a.fetchOrderDetails} 
+          detailLoading={a.detailLoading} 
+          selectedOrderId={a.selectedOrder?.id} 
+        />
       </Card>
 
       {/* Modals */}
-      <OrderDetailModal isOpen={a.isDetailOpen} onClose={() => a.setIsDetailOpen(false)} order={a.selectedOrder} items={a.selectedOrderItems} logs={a.selectedOrderLogs} isAdmin={a.isAdmin} onApprove={a.handleApprove} onReject={a.handleReject} onCancel={a.handleCancel} onInvoice={a.openInvoice} />
+      <OrderDetailModal 
+        isOpen={a.isDetailOpen} 
+        onClose={() => a.setIsDetailOpen(false)} 
+        order={a.selectedOrder} 
+        items={a.selectedOrderItems} 
+        logs={a.selectedOrderLogs} 
+        isAdmin={a.isAdmin} 
+        onApprove={() => a.selectedOrder && a.handleApprove(a.selectedOrder.id)} 
+        onReject={() => {
+          if (a.selectedOrder) {
+            const reason = window.prompt('Nhập lý do từ chối:');
+            if (reason !== null) a.handleReject(a.selectedOrder.id, reason || 'Không có lý do');
+          }
+        }} 
+        onCancel={() => {
+          if (a.selectedOrder) {
+            const reason = window.prompt('Nhập lý do hủy đơn:');
+            if (reason !== null) a.handleCancel(a.selectedOrder.id, reason || 'Không có lý do');
+          }
+        }} 
+        onInvoice={() => a.selectedOrder && a.openInvoice(a.selectedOrder)} 
+      />
       <OrderCreateModal isOpen={a.isFormOpen} onClose={() => a.setIsFormOpen(false)} onSave={a.handleCreateOrder} saving={a.formSaving} />
       <InvoicePreview isOpen={a.isInvoiceOpen} onClose={() => a.setIsInvoiceOpen(false)} order={a.invoiceOrder} />
     </div>
@@ -178,36 +160,3 @@ const OrdersPage: React.FC<OrdersPageProps> = ({ profile }) => {
 };
 
 export default OrdersPage;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             /**
- * WarehouseExportPanel — QR scanning + progress for warehouse export
- * ──────────────────────────────────────────────────────────────────
- * Extracted from ShippingDetailPanel for maintainability.
- */
-
-import React from 'react';
-import { QrCode, CheckCircle2, AlertCircle } from 'lucide-react';
-import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
-import LoadingSpinner from '../../../components/ui/LoadingSpinner';
-
-interface WarehouseExportPanelProps {
-  totalQuantity: number;
-  totalRolls: number;
-  items: any[];
-  scanCode: string;
-  setScanCode: (v: string) => void;
-  scanLoading: boolean;
-  scanError: string | null;
-  onScanRoll: () => void;
-}
-
-const WarehouseExportPanel: React.FC<WarehouseExportPanelProps> = ({
-  totalQuantity, totalRolls, items,
-  scanCode, setScanCode, scanLoading, scanError, onScanRoll
-}) => {
-  return (
-    <div className="space-y-4">
-      <div className="bg-white p-6 rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
-        <h4 className="font-bold text-lg text-slate-900 flex items-center gap-2 mb-4">
-          <QrC

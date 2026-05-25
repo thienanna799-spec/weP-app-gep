@@ -131,3 +131,7 @@ function appendToEngineeringLog(event: any): void {
   if (content.includes(dateHeader)) {
     content = content.replace(dateHeader, dateHeader + entry);
   } else {
+    content += `\n\n## ${today}${entry}`;
+  }
+  fs.writeFileSync(logPath, content, 'utf-8');
+}

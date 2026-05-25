@@ -117,4 +117,19 @@ export function useManualImport() {
 
   const getBatchStatusSummary = (batch: ImportBatch) => {
     const sc = batch.statusCounts || {};
-    const inStock = (sc['trong_kho'] || 0) + (sc['da_giu_cho
+    const inStock = (sc['trong_kho'] || 0) + (sc['da_giu_cho_don'] || 0) + (sc['da_xuat_kho'] || 0);
+    const defective = sc['loi_hong'] || 0;
+    const pending = sc['cho_nhap_kho'] || 0;
+    const total = inStock + defective + pending;
+    return { inStock, defective, pending, total };
+  };
+
+  return {
+    batches, loading, creating, activeBatch, setActiveBatch, showForm, setShowForm,
+    sku, setSku, productName, setProductName, subSku, setSubSku, specification, setSpecification,
+    color, setColor, otherSpecs, setOtherSpecs, costPrice, setCostPrice, supplier, setSupplier,
+    note, setNote, quickImport, setQuickImport, quantity, setQuantity,
+    fetchBatches, fetchBatchDetail, resetForm, handleCreateBatch, handleScanManual, handleMarkBatchDone,
+    getBatchStatusSummary
+  };
+}

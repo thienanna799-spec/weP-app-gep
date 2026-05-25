@@ -65,21 +65,21 @@ const SummaryCards: React.FC<Props> = ({ data, loading }) => {
         const Icon = card.icon;
         return (
           <div key={card.label}
-            className="relative overflow-hidden bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
+            className="relative overflow-hidden bg-white rounded-xl border border-slate-200 px-4 py-3 shadow-sm hover:shadow-md transition-shadow group">
             {/* Background gradient accent */}
-            <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${card.gradient} opacity-5 rounded-bl-[60px] group-hover:opacity-10 transition-opacity`} />
+            <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-br ${card.gradient} opacity-5 rounded-bl-[40px] group-hover:opacity-10 transition-opacity`} />
 
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{card.label}</span>
-              <div className={`p-2 bg-gradient-to-br ${card.gradient} rounded-xl shadow-lg`}>
-                <Icon className="w-4 h-4 text-white" />
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{card.label}</span>
+              <div className={`p-1.5 bg-gradient-to-br ${card.gradient} rounded-lg shadow-sm`}>
+                <Icon className="w-3.5 h-3.5 text-white" />
               </div>
             </div>
 
-            <div className="flex items-end gap-3">
-              <span className="text-3xl font-black text-slate-900">{card.value.toLocaleString()}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-black text-slate-900 leading-none">{card.value.toLocaleString()}</span>
               {'change' in card && card.change !== undefined && (
-                <div className={`flex items-center gap-0.5 text-xs font-bold px-2 py-0.5 rounded-full ${
+                <div className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
                   card.change > 0 ? 'bg-green-50 text-green-600' : card.change < 0 ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-500'
                 }`}>
                   {card.change > 0 ? <TrendingUp className="w-3 h-3" /> : card.change < 0 ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}

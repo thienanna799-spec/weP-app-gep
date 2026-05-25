@@ -95,6 +95,10 @@ export const updateMyDriver = asyncHandler(async (req: AuthRequest, res: Respons
   const { name, phone, email, address, dob, idCard, licenseNo, licenseType,
     licenseExpiry, notes, avatar, idCardPhoto, idCardPhotoBack, licensePhoto, licensePhotoBack } = req.body;
 
+  console.log('--- updateMyDriver ---');
+  console.log('Received keys:', Object.keys(req.body));
+  console.log('Avatar length:', avatar ? avatar.length : 0);
+
   const driver = await prisma.driver.update({
     where: { id: existing.id },
     data: {
@@ -135,13 +139,26 @@ export const uploadMyDocuments = asyncHandler(async (req: AuthRequest, res: Resp
     });
   }
 
-  const { idCardPhoto, idCardPhotoBack, licensePhoto, licensePhotoBack } = req.body;
-  if (!idCardPhoto && !idCardPhotoBack && !licensePhoto && !licensePhotoBack) {
+  const { avatar, idCardPhoto, idCardPhotoBack, licensePhoto, licensePhotoBack } = req.body;
+  console.log('--- uploadMyDocuments ---');
+  console.log('Received keys:', Object.keys(req.body));
+  console.log('Avatar length:', avatar ? avatar.length : 0);
+  console.log('idCardPhoto length:', idCardPhoto ? idCardPhoto.length : 0);
+  
+  if (!avatar && !idCardPhoto && !idCardPhotoBack && !licensePhoto && !licensePhotoBack) {
     sendError(res, 'At least one document photo is required', 400);
     return;
   }
 
+  console.log(`[UploadDocuments] Driver: ${existing.name}`);
+  console.log(`[UploadDocuments] avatar length: ${avatar?.length || 0}`);
+  console.log(`[UploadDocuments] idCardPhoto length: ${idCardPhoto?.length || 0}`);
+  console.log(`[UploadDocuments] idCardPhotoBack length: ${idCardPhotoBack?.length || 0}`);
+  console.log(`[UploadDocuments] licensePhoto length: ${licensePhoto?.length || 0}`);
+  console.log(`[UploadDocuments] licensePhotoBack length: ${licensePhotoBack?.length || 0}`);
+
   const data: any = {};
+  if (avatar) data.avatar = avatar;
   if (idCardPhoto) data.idCardPhoto = idCardPhoto;
   if (idCardPhotoBack) data.idCardPhotoBack = idCardPhotoBack;
   if (licensePhoto) data.licensePhoto = licensePhoto;

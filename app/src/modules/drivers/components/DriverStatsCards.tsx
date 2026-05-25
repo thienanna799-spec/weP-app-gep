@@ -29,15 +29,15 @@ export const DriverStatsCards: React.FC<DriverStatsProps> = ({ stats }) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
       {cards.map((card, idx) => (
-        <Card key={idx} className="p-4 bg-white border-none shadow-sm relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-2">
-            <div className={`p-2 rounded-xl bg-${card.color}-50 text-${card.color}-600 group-hover:scale-110 transition-transform`}>
-              <card.icon className="w-5 h-5" />
-            </div>
+        <Card key={idx} className="p-3 bg-white border-none shadow-sm relative overflow-hidden group flex items-center gap-3">
+          <div className={`p-2 rounded-xl bg-${card.color}-50 text-${card.color}-600 group-hover:scale-110 transition-transform shrink-0`}>
+            <card.icon className="w-5 h-5" />
           </div>
-          <p className="text-2xl font-black text-slate-900">{card.value}</p>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{card.label}</p>
-          <p className="text-[10px] text-slate-500 mt-1">{card.sub}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">{card.label}</p>
+            <p className="text-lg font-black text-slate-900 leading-tight truncate">{card.value}</p>
+            <p className="text-[9px] text-slate-500 truncate">{card.sub}</p>
+          </div>
           <div className={`absolute bottom-0 left-0 h-1 w-full bg-${card.color}-500 opacity-20`} />
         </Card>
       ))}

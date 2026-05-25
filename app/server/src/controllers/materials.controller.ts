@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
+import { MaterialStatus } from '../types/enums.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 
@@ -134,7 +135,7 @@ export const createTransaction = asyncHandler(async (req: AuthRequest, res: Resp
 
       await tx.material.update({
         where: { id: item.materialId },
-        data: { currentStock: newStock, status: status as any },
+        data: { currentStock: newStock, status: status as MaterialStatus },
       });
     }
 

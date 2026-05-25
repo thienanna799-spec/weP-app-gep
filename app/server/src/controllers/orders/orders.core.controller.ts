@@ -1,8 +1,11 @@
 import { Response } from 'express';
 import { prisma } from '../../lib/prisma.js';
 import { sendSuccess, sendError } from '../../utils/apiResponse.js';
+import { OrderStatus } from '../../types/enums.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { AuthRequest } from '../../middlewares/auth.middleware.js';
+import { recordSalesOrderEvent } from '../../services/orderTracking.service.js';
+import { recordSystemAudit } from '../../services/systemAudit.service.js';
 
 export function emitSync(req: AuthRequest, event: string, payload: any) {
   const io = req.app.get('io');
@@ -15,7 +18,7 @@ export const getOrders = asyncHandler(async (req: AuthRequest, res: Response) =>
   let where: any = undefined;
   if (status && status !== 'All') {
     const statuses = status.split(',').map(s => s.trim());
-    where = statuses.length === 1 ? { status: statuses[0] as any } : { status: { in: statuses as any[] } };
+    where = statuses.length === 1 ? { status: statuses[0] as OrderStatus } : { status: { in: statuses as OrderStatus[] } };
   }
 
   if (req.user!.role === 'driver') {
@@ -70,16 +73,21 @@ export const createOrder = asyncHandler(async (req: AuthRequest, res: Response) 
       ...orderData, createdBy: req.user!.uid, createdByName: req.user!.name,
       code: orderData.code || `DH-${Date.now().toString().slice(-8)}`,
       items: cleanItems?.length ? { create: cleanItems } : undefined,
-      logs: { create: { action: 'Tạo đơn hàng', createdBy: req.user!.name || req.user!.email } },
     } as any,
     include: { items: true },
   });
 
-  await prisma.userActivityLog.create({
-    data: {
-      userId: req.user!.uid, email: req.user!.email, action: 'Tạo đơn hàng mới',
-      module: 'Quản lý đơn hàng', referenceId: order.id, description: `Đơn hàng #${order.code} của ${order.customerName}`,
-    },
+  await recordSalesOrderEvent(order.id, {
+    actionType: 'CREATE',
+    action: `Tạo đơn hàng ${order.code}`,
+    operator: req.user!.name || req.user!.uid,
+    toStatus: order.status,
+    metadata: { items: cleanItems, revenue: order.totalRevenue }
+  });
+
+  await recordSystemAudit({
+    userId: req.user!.uid, email: req.user!.email || 'system', action: 'CREATE',
+    module: 'ORDER', referenceId: order.id, description: `Tạo đơn hàng #${order.code}`,
   });
 
   if (order.customerId) {
@@ -96,10 +104,18 @@ export const createOrder = asyncHandler(async (req: AuthRequest, res: Response) 
 /** PUT /api/orders/:id */
 export const updateOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { items, ...updateData } = req.body;
+  const oldOrder = await prisma.order.findUnique({ where: { id: req.params.id } });
   const order = await prisma.order.update({
     where: { id: req.params.id },
-    data: { ...updateData, logs: { create: { action: 'Cập nhật thông tin đơn hàng', createdBy: req.user!.name || req.user!.email } } },
+    data: updateData,
     include: { items: true },
+  });
+
+  await recordSalesOrderEvent(order.id, {
+    actionType: 'UPDATE',
+    action: `Cập nhật thông tin đơn hàng`,
+    operator: req.user!.name || req.user!.uid,
+    metadata: { updatedFields: Object.keys(updateData), before: oldOrder }
   });
   emitSync(req, 'order_updated', { orderId: order.id, type: 'updated' });
   sendSuccess(res, order, 200, 'Order updated');
@@ -107,6 +123,14 @@ export const updateOrder = asyncHandler(async (req: AuthRequest, res: Response) 
 
 /** DELETE /api/orders/:id */
 export const deleteOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const order = await prisma.order.findUnique({ where: { id: req.params.id } });
+  if (order) {
+    await recordSystemAudit({
+      userId: req.user!.uid, email: req.user!.email || 'system', action: 'DELETE',
+      module: 'ORDER', referenceId: order.id, description: `Xóa đơn hàng #${order.code}`,
+      oldValue: order
+    });
+  }
   await prisma.order.delete({ where: { id: req.params.id } });
   sendSuccess(res, null, 200, 'Order deleted');
 });

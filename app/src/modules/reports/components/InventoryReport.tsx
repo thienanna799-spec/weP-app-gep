@@ -16,60 +16,62 @@ const InventoryReport: React.FC<Props> = ({ data, loading }) => {
     <div className="space-y-6">
       {/* KPI Row */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <p className="text-xs font-bold text-slate-500 uppercase">Tồn kho</p>
-          <span className="text-3xl font-black text-emerald-600">{currentStock}</span>
-          <p className="text-[10px] text-slate-400">cuộn trong kho</p>
+        <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 shadow-sm">
+          <p className="text-[10px] font-bold text-slate-500 uppercase">Tồn kho</p>
+          <span className="text-2xl font-black text-emerald-600 block mt-1 leading-none">{currentStock}</span>
+          <p className="text-[10px] text-slate-400 mt-0.5">cuộn trong kho</p>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <p className="text-xs font-bold text-slate-500 uppercase">Đã xuất</p>
-          <span className="text-3xl font-black text-blue-600">{totalShipped}</span>
-          <p className="text-[10px] text-slate-400">cuộn trong kỳ</p>
+        <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 shadow-sm">
+          <p className="text-[10px] font-bold text-slate-500 uppercase">Đã xuất</p>
+          <span className="text-2xl font-black text-blue-600 block mt-1 leading-none">{totalShipped}</span>
+          <p className="text-[10px] text-slate-400 mt-0.5">cuộn trong kỳ</p>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <p className="text-xs font-bold text-slate-500 uppercase">Vòng quay kho</p>
-          <span className="text-3xl font-black text-amber-600">{turnoverRate}x</span>
-          <p className="text-[10px] text-slate-400">turnover rate</p>
+        <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 shadow-sm">
+          <p className="text-[10px] font-bold text-slate-500 uppercase">Vòng quay kho</p>
+          <span className="text-2xl font-black text-amber-600 block mt-1 leading-none">{turnoverRate}x</span>
+          <p className="text-[10px] text-slate-400 mt-0.5">turnover rate</p>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <p className="text-xs font-bold text-slate-500 uppercase">Tồn lâu</p>
-          <span className={`text-3xl font-black ${slowMoving?.length > 10 ? 'text-red-600' : 'text-slate-600'}`}>{slowMoving?.length || 0}</span>
-          <p className="text-[10px] text-slate-400">cuộn &gt; 30 ngày</p>
+        <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 shadow-sm">
+          <p className="text-[10px] font-bold text-slate-500 uppercase">Tồn lâu</p>
+          <span className={`text-2xl font-black block mt-1 leading-none ${slowMoving?.length > 10 ? 'text-red-600' : 'text-slate-600'}`}>{slowMoving?.length || 0}</span>
+          <p className="text-[10px] text-slate-400 mt-0.5">cuộn &gt; 30 ngày</p>
         </div>
       </div>
 
-      {/* Stock by product */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5">
-        <h4 className="text-sm font-bold text-slate-900 mb-4">📦 Tồn kho theo sản phẩm</h4>
-        <ChartZoom title="Tồn kho theo sản phẩm" height="280px">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={stockByProduct?.slice(0, 10)}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" height={60} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip contentStyle={{ borderRadius: 12 }} />
-              <Bar dataKey="count" fill="#22c55e" radius={[6, 6, 0, 0]} name="Số cuộn" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartZoom>
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Stock by product */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow">
+          <h4 className="text-sm font-bold text-slate-800 mb-2">📦 Tồn kho theo sản phẩm</h4>
+          <ChartZoom title="Tồn kho theo sản phẩm" height="200px">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stockByProduct?.slice(0, 10)} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} angle={-20} textAnchor="end" height={50} />
+                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0' }} />
+                <Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} name="Số cuộn" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartZoom>
+        </div>
 
-      {/* Stock movement */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5">
-        <h4 className="text-sm font-bold text-slate-900 mb-4">📈 Nhập / Xuất kho theo ngày</h4>
-        <ChartZoom title="Nhập / Xuất kho theo ngày" height="260px">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={stockMovement}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v: string) => v.slice(5)} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip contentStyle={{ borderRadius: 12 }} />
-              <Legend />
-              <Line type="monotone" dataKey="inCount" stroke="#22c55e" strokeWidth={2.5} dot={false} name="Nhập kho" />
-              <Line type="monotone" dataKey="outCount" stroke="#ef4444" strokeWidth={2} dot={false} name="Xuất kho" />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartZoom>
+        {/* Stock movement */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow">
+          <h4 className="text-sm font-bold text-slate-800 mb-2">📈 Nhập / Xuất kho</h4>
+          <ChartZoom title="Nhập / Xuất kho theo ngày" height="200px">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stockMovement} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => v.slice(5)} />
+                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0' }} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                <Line type="monotone" dataKey="inCount" stroke="#22c55e" strokeWidth={2.5} dot={false} name="Nhập kho" />
+                <Line type="monotone" dataKey="outCount" stroke="#ef4444" strokeWidth={2.5} dot={false} name="Xuất kho" />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartZoom>
+        </div>
       </div>
 
       {/* Slow moving items */}

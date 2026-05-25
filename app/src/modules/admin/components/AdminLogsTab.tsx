@@ -38,7 +38,7 @@ const AdminLogsTab: React.FC<AdminLogsTabProps> = ({ loginLogs, activityLogs }) 
           </h3>
         </div>
         <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
-          {loginLogs.map(log => (
+          {loginLogs.slice(0, 100).map(log => (
             <div key={log.id} className="flex gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${log.status === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                 <Lock className="w-4 h-4" />
@@ -63,7 +63,7 @@ const AdminLogsTab: React.FC<AdminLogsTabProps> = ({ loginLogs, activityLogs }) 
           </h3>
         </div>
         <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
-          {activityLogs.map(log => (
+          {activityLogs.slice(0, 100).map(log => (
             <div key={log.id} className="relative pl-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-50">
               <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-white border-2 border-indigo-100 flex items-center justify-center z-10">
                 <TrendingUp className="w-3 h-3 text-indigo-400" />

@@ -5,23 +5,18 @@ import { Truck, ArrowRight, Plus } from 'lucide-react';
 import { formatDateTime } from '../../../utils/format';
 import Badge from '../../../components/ui/Badge';
 
+import api from '../../../services/api';
+import { useSocket } from '../../../hooks/useSocket';
+
 export default function TransferTab() {
   const [transfers, setTransfers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchTransfers();
-  }, []);
-
   const fetchTransfers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/inventory/transfers', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setTransfers(data.data);
+      const res = await api.get<{ success: boolean; data: any[] }>('/inventory/transfers');
+      if (res.success) {
+        setTransfers(res.data);
       }
     } catch (error) {
       console.error(error);
@@ -29,6 +24,12 @@ export default function TransferTab() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchTransfers();
+  }, []);
+
+  useSocket({ onInventoryUpdate: fetchTransfers });
 
   const handleCreate = async () => {
     const fromLocation = prompt('Từ kho/vị trí:');
@@ -41,20 +42,14 @@ export default function TransferTab() {
     const rollCodes = codes.split(',').map(c => c.trim()).filter(Boolean);
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/inventory/transfers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ fromLocation, toLocation, rollCodes, notes: `Chuyển kho tự động` })
-      });
-      const data = await res.json();
-      if (data.success) {
+      const res = await api.post<{ success: boolean; message?: string }>('/inventory/transfers', { fromLocation, toLocation, rollCodes, notes: `Chuyển kho tự động` });
+      if (res.success) {
         fetchTransfers();
       } else {
-        alert(data.message || 'Có lỗi xảy ra, có thể mã cuộn không đúng');
+        alert(res.message || 'Có lỗi xảy ra, có thể mã cuộn không đúng');
       }
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      alert(error.message || 'Lỗi');
     }
   };
 

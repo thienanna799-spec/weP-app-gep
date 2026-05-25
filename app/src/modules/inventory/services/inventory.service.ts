@@ -36,6 +36,18 @@ export const inventoryService = {
     }
   },
 
+  getHistory: async (subSku: string): Promise<any[]> => {
+    return await api.get<any[]>(`/rolls/history?subSku=${encodeURIComponent(subSku)}`);
+  },
+
+  getRollTimeline: async (qrCode: string, startDate?: string, endDate?: string): Promise<{ roll: any; events: any[] }> => {
+    const params = new URLSearchParams();
+    if (startDate) params.set('start', startDate);
+    if (endDate) params.set('end', endDate);
+    const qs = params.toString();
+    return await api.get<{ roll: any; events: any[] }>(`/rolls/qr/${encodeURIComponent(qrCode)}/timeline${qs ? '?' + qs : ''}`);
+  },
+
   // ── Import Batches ─────────────────────────────────────
   createImportBatch: async (data: {
     productName: string;
@@ -102,6 +114,17 @@ export const inventoryService = {
   }> =>
     api.post('/inventory/sync-stock', { fileBase64 }),
 
+  updateMinStock: async (subSku: string, minStock: number): Promise<void> =>
+    api.put(`/inventory/stock-summary/${encodeURIComponent(subSku)}/min-stock`, { minStock }),
+
+  updateProductInfo: async (supplier: string, subSku: string, data: any): Promise<void> =>
+    api.put('/inventory/product-info', { supplier, subSku, ...data }),
+
+  getProductPricing: async (sku: string): Promise<any[]> => {
+    if (!sku) return [];
+    return api.get(`/inventory/product-pricing?sku=${encodeURIComponent(sku)}`);
+  },
+
   // ── Product Catalog (Tổng sản phẩm) ────────────────────
   getProductCatalog: async (): Promise<{ products: any[] }> =>
     api.get('/inventory/products'),
@@ -111,4 +134,7 @@ export const inventoryService = {
 
   // ── SUB-SKU Lookup ────────────────────────────────────────
   lookupSubSku: async (q: string): Promise<{
-    subSku: string; sku: s
+    subSku: string; sku: string; productName: string; specification: string; color: string; otherSpecs: string; costPrice: number; supplier: string;
+  }[]> =>
+    api.get(`/inventory/lookup-subsku?q=${encodeURIComponent(q)}`),
+};

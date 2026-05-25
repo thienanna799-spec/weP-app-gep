@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { Download, Factory, Package, Truck, Users, BarChart3, Layers } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import api from '../../services/api';
@@ -11,6 +12,7 @@ import InventoryReport from './components/InventoryReport';
 import DeliveryReport from './components/DeliveryReport';
 import CustomerReport from './components/CustomerReport';
 import SmartAlerts from './components/SmartAlerts';
+import MaterialsTab from './components/MaterialsTab';
 
 type TabKey = 'production' | 'materials' | 'inventory' | 'delivery' | 'customers';
 
@@ -108,28 +110,39 @@ const ReportsPage: React.FC = () => {
     }
   };
 
+  const [headerPortal, setHeaderPortal] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setHeaderPortal(document.getElementById('page-header-portal'));
+  }, []);
+
+  const topControlBar = (
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
+      <div className="flex-1 w-full max-w-4xl">
+        <ReportFilters filters={filters} onChange={setFilters} />
+      </div>
+      <Button onClick={handleExport} disabled={exporting} className="gap-2 shrink-0 h-10 bg-indigo-600 hover:bg-indigo-700 shadow-sm">
+        <Download className="w-4 h-4" /> {exporting ? 'Đang xuất...' : 'Xuất Excel'}
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BarChart3 className="w-7 h-7 text-blue-600" /> Báo cáo & Thống kê
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Phân tích hiệu suất vận hành — cập nhật lúc {lastUpdate.toLocaleTimeString('vi-VN')}
-          </p>
-        </div>
-        <Button onClick={handleExport} disabled={exporting} className="gap-2">
-          <Download className="w-4 h-4" /> {exporting ? 'Đang xuất...' : 'Xuất Excel'}
-        </Button>
+    <div className="flex flex-col h-[calc(100vh-100px)] space-y-4">
+      {headerPortal ? ReactDOM.createPortal(topControlBar, headerPortal) : topControlBar}
+
+      <div className="shrink-0">
+        <SummaryCards data={summary} loading={loadingSummary} />
       </div>
 
-      <ReportFilters filters={filters} onChange={setFilters} />
-      <SummaryCards data={summary} loading={loadingSummary} />
-      {summary?.alerts && <SmartAlerts alerts={summary.alerts} />}
+      {summary?.alerts && summary.alerts.length > 0 && (
+        <div className="shrink-0">
+          <SmartAlerts alerts={summary.alerts} />
+        </div>
+      )}
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="flex border-b border-slate-200 overflow-x-auto">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-0">
+        <div className="flex border-b border-slate-200 overflow-x-auto shrink-0">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.key;
@@ -143,78 +156,8 @@ const ReportsPage: React.FC = () => {
             );
           })}
         </div>
-        <div className="p-6">{renderTabContent()}</div>
+        <div className="p-6 flex-1 overflow-auto custom-scrollbar">{renderTabContent()}</div>
       </div>
-    </div>
-  );
-};
-
-// ─── Inline Materials Tab ─────────────────────────────────────────────────
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import ChartZoom from '../../components/ui/ChartZoom';
-
-const MaterialsTab: React.FC<{ data: any; loading: boolean }> = ({ data, loading }) => {
-  if (loading || !data) return <div className="space-y-4">{[...Array(2)].map((_, i) => <div key={i} className="h-64 bg-slate-100 rounded-2xl animate-pulse" />)}</div>;
-
-  const { materialUsage, lowStock, totalTransactions, totalEstimatedCost } = data;
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <p className="text-xs font-bold text-slate-500 uppercase">Giao dịch NVL</p>
-          <span className="text-3xl font-black text-slate-900">{totalTransactions}</span>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <p className="text-xs font-bold text-slate-500 uppercase">Chi phí ước tính</p>
-          <span className="text-2xl font-black text-blue-600">₱{(totalEstimatedCost || 0).toLocaleString('en-PH')}</span>
-        </div>
-        <div className="bg-white rounded-2xl border border-red-100 p-5">
-          <p className="text-xs font-bold text-red-500 uppercase">NVL thiếu</p>
-          <span className="text-3xl font-black text-red-600">{lowStock?.length || 0}</span>
-        </div>
-      </div>
-
-      {materialUsage && materialUsage.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <h4 className="text-sm font-bold text-slate-900 mb-4">📊 Tiêu thụ NVL (Thực tế vs Kế hoạch)</h4>
-          <ChartZoom title="Tiêu thụ NVL (Thực tế vs Kế hoạch)" height="300px">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={materialUsage.slice(0, 10)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-15} textAnchor="end" height={60} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip contentStyle={{ borderRadius: 12 }} />
-                <Bar dataKey="exported" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Thực tế" />
-                <Bar dataKey="planned" fill="#94a3b8" radius={[4, 4, 0, 0]} name="Kế hoạch" />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartZoom>
-        </div>
-      )}
-
-      {lowStock && lowStock.length > 0 && (
-        <div className="bg-white rounded-2xl border border-red-100 p-5">
-          <h4 className="text-sm font-bold text-red-800 mb-3">⚠️ Nguyên liệu dưới mức tối thiểu</h4>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="text-left text-xs text-slate-500 uppercase border-b border-slate-100">
-                <th className="pb-2 pr-4">Tên</th><th className="pb-2 pr-4">Tồn</th><th className="pb-2 pr-4">Tối thiểu</th><th className="pb-2">Thiếu</th>
-              </tr></thead>
-              <tbody>
-                {lowStock.map((m: any) => (
-                  <tr key={m.id} className="border-b border-slate-50">
-                    <td className="py-2 pr-4 font-medium">{m.name}</td>
-                    <td className="py-2 pr-4">{m.currentStock}</td>
-                    <td className="py-2 pr-4">{m.minStock}</td>
-                    <td className="py-2"><span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">{Math.max(0, m.minStock - m.currentStock)}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

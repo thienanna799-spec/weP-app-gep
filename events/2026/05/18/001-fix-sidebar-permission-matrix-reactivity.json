@@ -1,0 +1,36 @@
+{
+  "event_id": "2026-05-18-001",
+  "timestamp": "2026-05-18T03:33:22.991Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "6510ec7",
+  "type": "BUG_FIX",
+  "severity": "HIGH",
+  "title": "Fix Sidebar Permission Matrix Reactivity",
+  "why": "Sidebar rendered before permissions API call finished, showing default roles",
+  "root_cause": "Asynchronous rendering mismatch without UI blocking state",
+  "solution": "Added permissionsLoading state to block App rendering until API fetches permissions",
+  "blast_radius": [
+    "all-protected-routes",
+    "role-based-access",
+    "firebase-token-validation",
+    "frontend-backend-communication",
+    "all-api-calls",
+    "realtime-socket-events"
+  ],
+  "affected_files": [
+    "app/src/App.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "auth",
+    "admin",
+    "infra"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "Always use a loading state when fetching critical global contexts before rendering protected routes",
+  "rollback_strategy": "Git revert App.tsx loading state addition",
+  "governance_approval": true,
+  "data_loss": false,
+  "related_adr": []
+}

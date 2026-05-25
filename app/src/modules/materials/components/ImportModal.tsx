@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import { Material } from '../types';
+import { materialsService } from '../services/materials.service';
 
 interface ImportItem {
   materialId: string;
@@ -16,29 +18,48 @@ interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   materials: Material[];
-  importItems: ImportItem[];
-  setImportItems: React.Dispatch<React.SetStateAction<ImportItem[]>>;
-  importSupplier: string;
-  setImportSupplier: (v: string) => void;
-  importDate: string;
-  setImportDate: (v: string) => void;
-  importRef: string;
-  setImportRef: (v: string) => void;
-  importNotes: string;
-  setImportNotes: (v: string) => void;
-  importSaving: boolean;
-  onImport: () => void;
+  onSuccess: () => void;
 }
 
 const ImportModal: React.FC<ImportModalProps> = ({
-  isOpen, onClose, materials,
-  importItems, setImportItems,
-  importSupplier, setImportSupplier,
-  importDate, setImportDate,
-  importRef, setImportRef,
-  importNotes, setImportNotes,
-  importSaving, onImport
+  isOpen, onClose, materials, onSuccess
 }) => {
+  const { t } = useTranslation();
+  const [importItems, setImportItems] = useState<ImportItem[]>([]);
+  const [importSupplier, setImportSupplier] = useState('');
+  const [importDate, setImportDate] = useState(new Date().toISOString().split('T')[0]);
+  const [importRef, setImportRef] = useState('');
+  const [importNotes, setImportNotes] = useState('');
+  const [importSaving, setImportSaving] = useState(false);
+
+  const handleImport = async () => {
+    const validItems = importItems.filter(i => i.materialId && i.quantity > 0);
+    if (validItems.length === 0) { 
+      alert(t('materials.valid_item_required') || 'Vui lòng nhập mặt hàng hợp lệ'); 
+      return; 
+    }
+    
+    setImportSaving(true);
+    try {
+      await materialsService.createTransaction({
+        type: 'import', operator: 'Admin',
+        supplier: importSupplier || undefined, referenceId: importRef || undefined,
+        notes: importNotes || undefined, items: validItems
+      });
+      
+      setImportItems([]); 
+      setImportSupplier(''); 
+      setImportRef(''); 
+      setImportNotes('');
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      alert((t('materials.import_error') || 'Lỗi nhập kho') + ': ' + (err.message || err));
+    } finally { 
+      setImportSaving(false); 
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -48,7 +69,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Hủy</Button>
-          <Button className="bg-green-600 hover:bg-green-700" onClick={onImport} disabled={importItems.length === 0 || importSaving}>
+          <Button className="bg-green-600 hover:bg-green-700" onClick={handleImport} disabled={importItems.length === 0 || importSaving}>
             {importSaving ? 'Đang xử lý...' : 'Xác nhận nhập kho'}
           </Button>
         </>

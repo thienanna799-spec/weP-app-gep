@@ -1,0 +1,35 @@
+{
+  "event_id": "2026-05-18-001",
+  "timestamp": "2026-05-18T04:26:55.003Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "6510ec7",
+  "type": "FEATURE",
+  "severity": "LOW",
+  "title": "Add Extended Fields to Batch Import",
+  "why": "The Khai báo Hàng loạt API didn't support the new extended fields added to Stock Sync, resulting in fragmented data ingestion capabilities",
+  "root_cause": "excel.service.ts was strictly parsing only the old columns",
+  "solution": "Added mapping for KÍCH THƯỚC, ĐƠN VỊ BÁN, K.THƯỚC Đ.VỊ, GIÁ/ĐV in processImport, updated the template generation, and updated the UI hint to reflect the new structure",
+  "blast_radius": [
+    "inventory-stock-calculation",
+    "product-roll-status",
+    "order-reservation",
+    "qr-scanner"
+  ],
+  "affected_files": [
+    "app/server/src/services/excel.service.ts",
+    "app/src/modules/inventory/components/ExcelImportPanel.tsx"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "inventory",
+    "database",
+    "ui"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "When adding new fields to a domain, check all ingestion vectors (multiple upload points) to ensure parity",
+  "rollback_strategy": "Git revert changes",
+  "governance_approval": true,
+  "data_loss": false,
+  "related_adr": []
+}

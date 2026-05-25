@@ -23,10 +23,31 @@ const WarehouseMap3D: React.FC<Props> = ({ rolls, onRollClick }) => {
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [warehouseConfig, setWarehouseConfig] = useState(WAREHOUSE);
+
+  // Sync with localStorage
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('gep_warehouse_config');
+      if (saved) {
+        try {
+          setWarehouseConfig(JSON.parse(saved));
+        } catch (e) {}
+      }
+    };
+    handleStorageChange(); // init
+    window.addEventListener('storage', handleStorageChange);
+    // Custom event dispatch inside StorageAreaManagement
+    window.addEventListener('warehouse_config_updated', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('warehouse_config_updated', handleStorageChange);
+    };
+  }, []);
 
   const zoneStats = useMemo(() => {
     const stats: Record<string, { total: number; inStock: number; reserved: number; defective: number }> = {};
-    WAREHOUSE.zones.forEach(z => {
+    warehouseConfig.zones.forEach(z => {
       const zoneRolls = rolls.filter(r => (r.positionArea || '').includes(z.id));
       stats[z.id] = {
         total: zoneRolls.length,
@@ -36,7 +57,7 @@ const WarehouseMap3D: React.FC<Props> = ({ rolls, onRollClick }) => {
       };
     });
     return stats;
-  }, [rolls]);
+  }, [rolls, warehouseConfig.zones]);
 
   const scale = 14 * zoom;
   const handleMouseDown = (e: React.MouseEvent) => { if (e.button === 0) { setIsDragging(true); setDragStart({ x: e.clientX, y: e.clientY }); } };
@@ -80,16 +101,16 @@ const WarehouseMap3D: React.FC<Props> = ({ rolls, onRollClick }) => {
 
         <div className="absolute inset-0 flex items-center justify-center" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
           <div style={{ transformStyle: 'preserve-3d', transform: `rotateX(${rotateX}deg) rotateZ(${rotateZ}deg) scale(${zoom})`, transition: isDragging ? 'none' : 'transform 0.3s ease-out' }}>
-            <div style={{ width: `${WAREHOUSE.width * scale}px`, height: `${WAREHOUSE.length * scale}px`, background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', border: '2px solid #475569', borderRadius: '4px', position: 'relative', transformStyle: 'preserve-3d', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+            <div style={{ width: `${warehouseConfig.width * scale}px`, height: `${warehouseConfig.length * scale}px`, background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', border: '2px solid #475569', borderRadius: '4px', position: 'relative', transformStyle: 'preserve-3d', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
               {/* Floor grid */}
-              {Array.from({ length: Math.floor(WAREHOUSE.length / 2) }).map((_, i) => (<div key={`h${i}`} style={{ position: 'absolute', top: `${i * 2 * scale}px`, left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.03)' }} />))}
-              {Array.from({ length: Math.floor(WAREHOUSE.width / 2) }).map((_, i) => (<div key={`v${i}`} style={{ position: 'absolute', left: `${i * 2 * scale}px`, top: 0, bottom: 0, width: '1px', background: 'rgba(255,255,255,0.03)' }} />))}
+              {Array.from({ length: Math.floor(warehouseConfig.length / 2) }).map((_, i) => (<div key={`h${i}`} style={{ position: 'absolute', top: `${i * 2 * scale}px`, left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.03)' }} />))}
+              {Array.from({ length: Math.floor(warehouseConfig.width / 2) }).map((_, i) => (<div key={`v${i}`} style={{ position: 'absolute', left: `${i * 2 * scale}px`, top: 0, bottom: 0, width: '1px', background: 'rgba(255,255,255,0.03)' }} />))}
 
               {/* Aisle */}
-              <div style={{ position: 'absolute', left: `${4.2 * scale}px`, top: 0, width: `${1.6 * scale}px`, height: `${WAREHOUSE.length * scale}px`, background: 'repeating-linear-gradient(0deg, rgba(234,179,8,0.15) 0px, rgba(234,179,8,0.15) 8px, transparent 8px, transparent 16px)', borderLeft: '1px dashed rgba(234,179,8,0.3)', borderRight: '1px dashed rgba(234,179,8,0.3)' }} />
+              <div style={{ position: 'absolute', left: `${4.2 * scale}px`, top: 0, width: `${1.6 * scale}px`, height: `${warehouseConfig.length * scale}px`, background: 'repeating-linear-gradient(0deg, rgba(234,179,8,0.15) 0px, rgba(234,179,8,0.15) 8px, transparent 8px, transparent 16px)', borderLeft: '1px dashed rgba(234,179,8,0.3)', borderRight: '1px dashed rgba(234,179,8,0.3)' }} />
 
               {/* Zones */}
-              {WAREHOUSE.zones.map(zone => {
+              {warehouseConfig.zones.map(zone => {
                 const isHovered = hoveredZone === zone.id;
                 const isSelected = selectedZone === zone.id;
                 return (
@@ -131,7 +152,7 @@ const WarehouseMap3D: React.FC<Props> = ({ rolls, onRollClick }) => {
               })}
 
               {/* Facilities */}
-              {WAREHOUSE.facilities.map((f, i) => (
+              {warehouseConfig.facilities.map((f, i) => (
                 <div key={i} style={{ position: 'absolute', left: `${f.x * scale}px`, top: `${(f.y + 2) * scale}px`, width: `${f.w * scale}px`, height: `${f.h * scale}px`, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
                   <span style={{ fontSize: '14px' }}>{f.icon}</span>
                   <span style={{ fontSize: '7px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{f.name}</span>

@@ -38,7 +38,28 @@ export function getCached<T>(report: string, filters: Record<string, unknown>): 
   return entry.data as T;
 }
 
+const MAX_CACHE_ITEMS = 1000;
+
 export function setCache<T>(report: string, filters: Record<string, unknown>, data: T, ttlMs?: number): void {
+  // Guard to prevent memory leaks under heavy usage
+  if (store.size >= MAX_CACHE_ITEMS) {
+    const now = Date.now();
+    // 1. Evict expired entries first
+    for (const [key, entry] of store.entries()) {
+      if (now > entry.expiresAt) {
+        store.delete(key);
+      }
+    }
+    // 2. If still full, evict oldest 10% of items to release RAM
+    if (store.size >= MAX_CACHE_ITEMS) {
+      const keys = Array.from(store.keys());
+      const toDeleteCount = Math.floor(MAX_CACHE_ITEMS * 0.1);
+      for (let i = 0; i < toDeleteCount; i++) {
+        store.delete(keys[i]);
+      }
+    }
+  }
+
   const ttl = ttlMs ?? (['summary'].includes(report) ? HOT_TTL_MS : COLD_TTL_MS);
   const key = buildKey(report, filters);
   store.set(key, { data, expiresAt: Date.now() + ttl });

@@ -5,12 +5,15 @@
  */
 
 import React, { useState } from 'react';
-import { X, PackagePlus, Trash2, Download } from 'lucide-react';
-import Card from '../../../components/ui/Card';
-import { InventoryRollsTable } from './InventoryRollsTable';
+import { X, PackagePlus, Trash2, Box, BarChart2, Settings } from 'lucide-react';
 import QuickImportForm from './QuickImportForm';
 import { StockRow } from '../hooks/useStockSummary';
 import { ProductRoll } from '../types';
+import { useRollHistory } from '../hooks/useRollHistory';
+import { HistoryTabContent } from './HistoryTabContent';
+import { OverviewTabContent } from './OverviewTabContent';
+import { ProductInfoModal } from './ProductInfoModal';
+import { StockStatCards } from './StockStatCards';
 
 interface StockDetailModalProps {
   selectedRow: StockRow;
@@ -35,14 +38,6 @@ interface StockDetailModalProps {
   onExportExcel: () => void;
 }
 
-const AGING_OPTIONS = [
-  { value: 0, label: 'Tất cả' },
-  { value: 3, label: '> 3 ngày' },
-  { value: 7, label: '> 7 ngày' },
-  { value: 14, label: '> 14 ngày' },
-  { value: 30, label: '> 30 ngày' },
-];
-
 const StockDetailModal: React.FC<StockDetailModalProps> = ({
   selectedRow, onClose, filteredRolls,
   agingFilter, setAgingFilter, onRollClick,
@@ -51,6 +46,11 @@ const StockDetailModal: React.FC<StockDetailModalProps> = ({
   showImportForm, setShowImportForm,
   onDeleteProductGroup, onExportExcel
 }) => {
+  const [activeTab, setActiveTab] = useState<'history' | 'overview'>('overview');
+  const [showInfo, setShowInfo] = useState(false);
+  
+  const h = useRollHistory(selectedRow?.subSku, filteredRolls);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -58,9 +58,25 @@ const StockDetailModal: React.FC<StockDetailModalProps> = ({
         <div className="flex justify-between items-center p-6 border-b border-slate-100">
           <div>
             <h2 className="text-xl font-black text-slate-900">{selectedRow.productName || 'Sản phẩm chưa xác định'}</h2>
-            <p className="text-sm text-slate-500 font-mono mt-1">XƯỞNG: {selectedRow.supplier || '—'} | SUB-SKU: {selectedRow.subSku || '—'}</p>
+            <p className="text-sm text-slate-500 font-mono mt-1">
+              XƯỞNG: {selectedRow.supplier || '—'} | SUB-SKU: {selectedRow.subSku || '—'}
+            </p>
+            {selectedRow.sku && (
+              <p className="text-sm font-mono mt-0.5 text-slate-400">
+                SKU: <span className="text-indigo-600 font-bold">{selectedRow.sku}</span>
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setShowInfo(true)} 
+              className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors border border-slate-200 hover:border-indigo-200"
+              title="Thông tin chi tiết sản phẩm"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="text-sm font-bold">Cài đặt & Thông tin</span>
+            </button>
+            <div className="w-px h-6 bg-slate-200 mx-1"></div>
             <button 
               onClick={() => setShowImportForm(!showImportForm)} 
               className={`flex items-center gap-2 px-4 py-2 font-bold rounded-lg transition-colors border ${showImportForm ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
@@ -82,6 +98,14 @@ const StockDetailModal: React.FC<StockDetailModalProps> = ({
         
         {/* Body */}
         <div className="p-6 overflow-y-auto bg-slate-50 flex-1 space-y-6">
+
+          {/* Product Info Modal */}
+          {showInfo && (
+            <ProductInfoModal 
+              selectedRow={selectedRow}
+              onClose={() => setShowInfo(false)}
+            />
+          )}
           
           {/* Quick Import Form */}
           {showImportForm && (
@@ -96,65 +120,59 @@ const StockDetailModal: React.FC<StockDetailModalProps> = ({
             />
           )}
 
-          {/* 4 Stat Cards */}
-          <div className="grid grid-cols-4 gap-4">
-            <Card className="p-4 border-l-4 border-indigo-500 shadow-sm">
-              <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">Tổng tồn thực tế</p>
-              <p className="text-2xl font-black text-slate-900 mt-1">{(selectedRow as any).tonThucTe || 0} <span className="text-sm font-normal text-slate-500">cuộn</span></p>
-            </Card>
-            <Card className="p-4 border-l-4 border-emerald-500 shadow-sm">
-              <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Tồn khả dụng</p>
-              <p className="text-2xl font-black text-slate-900 mt-1">{(selectedRow as any).tonKhaDung || 0} <span className="text-sm font-normal text-slate-500">cuộn</span></p>
-            </Card>
-            <Card className="p-4 border-l-4 border-amber-500 shadow-sm">
-              <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Đã giữ đơn</p>
-              <p className="text-2xl font-black text-slate-900 mt-1">{(selectedRow as any).daGiuDon || 0} <span className="text-sm font-normal text-slate-500">cuộn</span></p>
-            </Card>
-            <Card className="p-4 border-l-4 border-rose-500 shadow-sm">
-              <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Lỗi / Hỏng</p>
-              <p className="text-2xl font-black text-slate-900 mt-1">{((selectedRow as any).loi || 0) + ((selectedRow as any).hong || 0)} <span className="text-sm font-normal text-slate-500">cuộn</span></p>
-            </Card>
+          {/* 5 Stat Cards */}
+          <StockStatCards selectedRow={selectedRow} />
+
+          {/* Tabs Menu */}
+          <div className="flex border-b border-slate-200 gap-8">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`pb-3 text-sm font-bold flex items-center gap-2 transition-colors relative whitespace-nowrap ${activeTab === 'overview' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <BarChart2 className="w-4 h-4" />
+              Tổng quan Biến động theo ngày
+              {activeTab === 'overview' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />}
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`pb-3 text-sm font-bold flex items-center gap-2 transition-colors relative whitespace-nowrap ${activeTab === 'history' ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <Box className="w-4 h-4" />
+              Chi tiết Cuộn & Lịch sử
+              {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />}
+            </button>
           </div>
 
-          {/* Rolls Table with Aging Filter */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-slate-800 uppercase flex items-center gap-2">
-                Danh sách Cuộn vật lý ({filteredRolls.length})
-              </h3>
-              
-              {/* Aging Filter Pills & Export */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
-                  {AGING_OPTIONS.map(f => (
-                    <button
-                      key={f.value}
-                      onClick={() => setAgingFilter(f.value)}
-                      className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
-                        agingFilter === f.value 
-                          ? 'bg-white text-blue-600 shadow-sm' 
-                          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'
-                      }`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-                
-                <button 
-                  onClick={onExportExcel}
-                  disabled={filteredRolls.length === 0}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-md text-sm font-bold transition-colors border border-emerald-200"
-                >
-                  <Download className="w-4 h-4" />
-                  Tải Excel
-                </button>
-              </div>
-            </div>
-            <InventoryRollsTable filteredRolls={filteredRolls} handleShowDetail={(r) => {
-              if (onRollClick) onRollClick(r);
-            }} />
-          </div>
+          {/* Overview Tab Content */}
+          {activeTab === 'overview' && (
+            <OverviewTabContent 
+              loadingHistory={h.loadingHistory}
+              dailyOverview={h.dailyOverview}
+              jumpToHistory={(date, type) => { h.jumpToHistory(date, type); setActiveTab('history'); }}
+            />
+          )}
+
+          {/* Rolls & History Tab Content */}
+          {activeTab === 'history' && (
+            <HistoryTabContent 
+              historyFilterDate={h.historyFilterDate}
+              historyFilterType={h.historyFilterType}
+              setHistoryFilterDate={h.setHistoryFilterDate}
+              setHistoryFilterType={h.setHistoryFilterType}
+              historyViewMode={h.historyViewMode as any}
+              setHistoryViewMode={h.setHistoryViewMode as any}
+              agingFilter={agingFilter}
+              setAgingFilter={setAgingFilter}
+              loadingHistory={h.loadingHistory}
+              lifecycleGroups={h.lifecycleGroups}
+              orderGroups={h.orderGroups}
+              expandedQrCodes={h.expandedQrCodes}
+              toggleExpand={h.toggleExpand}
+              rollTimelineCache={h.rollTimelineCache}
+              exportOrderExcel={h.exportOrderExcel}
+              subSkuSafe={(selectedRow.subSku || 'Unknown').replace(/[^a-zA-Z0-9-]/g, '_')}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { getWarehouseConfig } from '../modules/inventory/components/warehouseConfig';
+import DEFAULT_CONFIG from '../modules/inventory/components/warehouseConfig';
 
 export interface ZoneUsage {
   id: string;
@@ -21,7 +21,9 @@ export interface StorageCapacityData {
   zones: ZoneUsage[];
 }
 
-export const useStorageCapacity = () => {
+import { useSocket } from './useSocket';
+
+export const useStorageCapacity = (zones: ZoneUsage[] | any[]) => {
   const [capacity, setCapacity] = useState<StorageCapacityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,5 +33,23 @@ export const useStorageCapacity = () => {
       setLoading(true);
       setError(null);
 
-      const config = getWarehouseConfig();
-      const zonesParam = config.z
+      const data = await api.get<StorageCapacityData>(
+        '/inventory/storage-capacity?zones=' + encodeURIComponent(JSON.stringify(zones || []))
+      );
+      setCapacity(data);
+    } catch (err: any) {
+      setError(err.message || 'Lỗi tính toán diện tích');
+    } finally {
+      setLoading(false);
+    }
+  }, [zones]);
+
+  useEffect(() => {
+    fetchCapacity();
+  }, [fetchCapacity]);
+
+  // Real-time synchronization
+  useSocket({ onInventoryUpdate: fetchCapacity });
+
+  return { capacity, loading, error, refetch: fetchCapacity };
+};

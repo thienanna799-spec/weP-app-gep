@@ -50,6 +50,8 @@ const CustomerTable: React.FC<Props> = ({ customers, loading, onView, onEdit, on
     setPricingPopup(prev => prev?.customer.id === c.id ? null : { customer: c, element });
   };
 
+  const visibleCustomers = customers.slice(0, 100);
+
   return (
     <>
       <Card className="overflow-hidden border border-slate-200">
@@ -60,9 +62,9 @@ const CustomerTable: React.FC<Props> = ({ customers, loading, onView, onEdit, on
                 <th className="px-3 py-3 w-10">
                   <input
                     type="checkbox"
-                    checked={customers.length > 0 && selectedIds.length === customers.length}
+                    checked={visibleCustomers.length > 0 && selectedIds.length === visibleCustomers.length}
                     onChange={(e) => {
-                      if (e.target.checked) onSelect?.(customers.map(c => c.id));
+                      if (e.target.checked) onSelect?.(visibleCustomers.map(c => c.id));
                       else onSelect?.([]);
                     }}
                     className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
@@ -81,9 +83,9 @@ const CustomerTable: React.FC<Props> = ({ customers, loading, onView, onEdit, on
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {customers.length === 0 ? (
+              {visibleCustomers.length === 0 ? (
                 <tr><td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-400 italic">{t('customers.no_customers')}</td></tr>
-              ) : customers.map(c => (
+              ) : visibleCustomers.map(c => (
                 <tr key={c.id} className={`relative transition-all duration-200 ${selectedIds.includes(c.id) ? 'bg-blue-50/80 hover:bg-blue-100 hover:shadow-md hover:z-10' : 'hover:bg-white hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-[1px] hover:z-10'}`}>
                   <td className="px-3 py-2.5">
                     <input
@@ -193,52 +195,3 @@ const CustomerTable: React.FC<Props> = ({ customers, loading, onView, onEdit, on
 };
 
 export default CustomerTable;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              /**
- * ClickableValue — Used in LogsTableRow to display a value that can be clicked to open a photo
- */
-import React from 'react';
-import { Camera, AlertTriangle, RefreshCw } from 'lucide-react';
-import { formatCurrency } from '../../../../utils/format';
-import { OcrAuditSummary } from './LogsTypes';
-
-interface ClickableValueProps {
-  value: string | number | null;
-  photo: string | null;
-  format?: 'km' | 'currency' | 'price';
-  onViewPhoto: (src: string, alt: string) => void;
-  label: string;
-  audit?: OcrAuditSummary;
-}
-
-const ClickableValue: React.FC<ClickableValueProps> = ({ value, photo, format, onViewPhoto, label, audit }) => {
-  if (value === null || value === undefined) return <span className="text-slate-300">—</span>;
-
-  let displayValue: string;
-  switch (format) {
-    case 'km':
-      displayValue = Number(value).toLocaleString('vi-VN');
-      break;
-    case 'currency':
-      displayValue = formatCurrency(Number(value));
-      break;
-    case 'price':
-      displayValue = `${Number(value).toLocaleString('vi-VN')}`;
-      break;
-    default:
-      displayValue = String(value);
-  }
-
-  let ocrWarning = null;
-  if (audit) {
-    const hasError = audit.reviewStatus === 'rejected' || (audit.differenceValue !== null && Math.abs(audit.differenceValue) > 0) || audit.riskLevel === 'high';
-    if (hasError) {
-      const tooltip = audit.fraudReason ? `OCR Cảnh báo: ${audit.fraudReason}` : 'OCR Cảnh báo: Dữ liệu không khớp';
-      ocrWarning = (
-        <span className="inline-flex items-center ml-1 text-red-500" title={tooltip}>
-          <AlertTriangle className="w-4 h-4 animate-pulse" />
-        </span>
-      );
-    } else if (audit.pipelineStatus !== 'audited' && audit.pipelineStatus !== 'failed' && audit.pipelineStatus !== 'queued') {
-      ocrWarning = (
-        <span className="inline-flex items-center ml-1 text-blue-400" title="OCR Đang quét...">
-          <RefreshCw className="w-3 h-3 animate-spin" 

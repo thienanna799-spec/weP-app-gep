@@ -118,4 +118,60 @@ const BatchCreateForm: React.FC<Props> = ({
             placeholder="VD: TT-BWP-BLACK" 
             value={subSku} 
             onChange={(e: any) => handleSearch(e.target.value, 'subSku')}
-            onFocus={() => { if (subSku.length >= 2) 
+            onFocus={() => { if (subSku.length >= 2) handleSearch(subSku, 'subSku'); }}
+            className="h-9 text-sm" 
+          />
+          {showDropdown === 'subSku' && suggestions.length > 0 && (
+            <div className="absolute z-50 w-full top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+              {suggestions.map((item, idx) => (
+                <div key={idx} onClick={() => handleSelectSuggestion(item)} className="px-3 py-2 hover:bg-violet-50 cursor-pointer border-b border-slate-100 last:border-0">
+                  <div className="font-bold text-sm text-slate-800">{item.subSku || '—'}</div>
+                  <div className="text-[10px] text-slate-500">{item.productName} • {item.supplier}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-slate-600">QUY CÁCH</label>
+          <Input placeholder="Tùy chọn..." value={specification} onChange={(e: any) => setSpecification(e.target.value)} className="h-9 text-sm" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-slate-600">MÀU SẮC</label>
+          <Input placeholder="Tùy chọn..." value={color} onChange={(e: any) => setColor(e.target.value)} className="h-9 text-sm" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-slate-600">CÁC THÔNG SỐ KHÁC</label>
+          <Input placeholder="Tùy chọn..." value={otherSpecs} onChange={(e: any) => setOtherSpecs(e.target.value)} className="h-9 text-sm" />
+        </div>
+        
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-slate-600">GIÁ VỐN (VNĐ)</label>
+          <Input type="number" placeholder="0" value={costPrice} onChange={(e: any) => setCostPrice(e.target.value)} className="h-9 text-sm" />
+        </div>
+        <div className="space-y-1 lg:col-span-2">
+          <label className="text-xs font-bold text-slate-600">GHI CHÚ / LÔ SX</label>
+          <Input placeholder="Tùy chọn..." value={note} onChange={(e: any) => setNote(e.target.value)} className="h-9 text-sm" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-slate-600">SỐ LƯỢNG <span className="text-red-500">*</span></label>
+          <Input type="number" placeholder="0" value={quantity} onChange={(e: any) => setQuantity(e.target.value)} className="h-9 text-sm font-bold text-violet-700" />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 pt-4 border-t border-violet-100">
+        <label className="flex items-center gap-2 cursor-pointer mr-auto bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+          <input type="checkbox" checked={quickImport} onChange={e => setQuickImport(e.target.checked)} className="rounded border-amber-400 text-amber-500 focus:ring-amber-500" />
+          <span className="text-xs font-bold text-amber-700 flex items-center gap-1"><Zap className="w-3.5 h-3.5" /> Chuyển thẳng vào Tồn kho (Bỏ qua in QR)</span>
+        </label>
+        
+        <Button variant="outline" onClick={onCancel} className="text-sm px-6">Hủy</Button>
+        <Button onClick={onSubmit} disabled={creating || !productName || !quantity} className="text-sm px-6 bg-violet-600 hover:bg-violet-700 shadow-sm">
+          {creating ? <LoadingSpinner size="sm" /> : <><PackagePlus className="w-4 h-4 mr-2" /> Tạo lô nhập</>}
+        </Button>
+      </div>
+    </Card>
+  );
+};
+
+export default BatchCreateForm;

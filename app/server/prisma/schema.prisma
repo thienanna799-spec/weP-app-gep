@@ -315,10 +315,19 @@ model OrderLog {
   newValue  String?  @db.Text
   note      String?  @db.Text
   createdBy String
-  createdAt DateTime @default(now())
+  
+  // ── Audit Enrichment ──────────────────────────
+  actionType String?
+  fromStatus String?
+  toStatus   String?
+  metadata   Json?    @db.Json
+  
+  createdAt  DateTime @default(now())
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
+  @@index([orderId, createdAt])
+  @@index([actionType])
   @@map("order_logs")
 }
 
@@ -457,6 +466,7 @@ model ProductionOrder {
   order          Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
   materials      ProductionOrderMaterial[]
   rolls          ProductRoll[]
+  events         ProductionEvent[]
 
   @@map("production_orders")
 }
@@ -469,6 +479,28 @@ enum ProductionOrderStatus {
   cancelled
 
   @@map("production_order_status")
+}
+
+// ── Production Lifecycle Event Log ────────────────────────
+model ProductionEvent {
+  id                String   @id @default(cuid())
+  productionOrderId String
+  timestamp         DateTime @default(now())
+  actionType        String   // CREATE | ASSIGN_MATERIAL | START | COMPLETE | CANCEL | UPDATE | OTHER
+  action            String   // Human-readable
+  operator          String   // Người thực hiện
+
+  // ── Snapshot Enrichment ────────────────────────
+  fromStatus        String?
+  toStatus          String?
+  note              String?  @db.Text
+  metadata          Json?    @db.Json
+
+  productionOrder ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+
+  @@index([productionOrderId, timestamp])
+  @@index([actionType, timestamp])
+  @@map("production_events")
 }
 
 model ProductionOrderMaterial {
@@ -495,6 +527,11 @@ model ProductRoll {
   productName       String
   sku               String?    // Customer-facing SKU code (e.g. BWP-TH-BLACK-4inch)
   subSku            String?    // Internal warehouse SUB-SKU code (e.g. TT-BWP-BLACK-Half)
+  color             String?
+  size              String?
+  salesUnit         String?
+  unitSize          String?
+  pricePerUnit      Float?
   specification     String
   stockQuantity     Int        @default(1)  // Number of items this roll represents (for accumulation)
   length            Float
@@ -527,6 +564,9 @@ model ProductRoll {
   movements       RollMovement[]
   shippingItems   ShippingOrderItem[]
 
+  @@index([status])
+  @@index([supplier, subSku])
+  @@index([createdAt])
   @@map("product_rolls")
 }
 
@@ -548,8 +588,21 @@ model RollScanHistory {
   action    String
   operator  String
 
+  // ── Lifecycle Tracking Enrichment ─────────────
+  actionType    String?   // CREATE | IMPORT | EXPORT | TRANSFER | DAMAGE | RETURN | ADJUST | OTHER
+  orderCode     String?   // Mã Lệnh: IMP-xxx, SHIP-xxx, SX-xxx, TRF-xxx
+  customerName  String?   // Snapshot tên khách hàng nhận hàng
+  driverName    String?   // Snapshot tên tài xế giao hàng
+  fromLocation  String?   // Vị trí cũ (khi chuyển kho / xuất kho)
+  toLocation    String?   // Vị trí mới (khi chuyển kho / nhập kho)
+  note          String?   @db.Text   // Ghi chú bổ sung
+  metadata      Json?     @db.Json   // Dữ liệu mở rộng tùy ý cho tương lai
+
   roll ProductRoll @relation(fields: [rollId], references: [id], onDelete: Cascade)
 
+  @@index([rollId, timestamp])
+  @@index([orderCode])
+  @@index([actionType, timestamp])
   @@map("roll_scan_history")
 }
 
@@ -634,6 +687,7 @@ model ShippingOrder {
   order        Order               @relation(fields: [orderId], references: [id], onDelete: NoAction)
   items        ShippingOrderItem[]
   deliveryLogs DeliveryLog[]
+  orderEvents  OrderEvent[]
 
   @@map("shipping_orders")
 }
@@ -649,6 +703,34 @@ enum ShippingStatus {
   hoan_tra             @map("hoàn trả")
 
   @@map("shipping_status")
+}
+
+// ── Order Lifecycle Event Log ────────────────────────
+// Immutable audit trail — mọi hành động trên đơn hàng đều được ghi.
+// Dữ liệu KHÔNG BAO GIỜ bị xóa hoặc sửa — chỉ append.
+model OrderEvent {
+  id               String   @id @default(cuid())
+  shippingOrderId  String
+  timestamp        DateTime @default(now())
+  actionType       String   // CREATE | APPROVE | ASSIGN_DRIVER | STATUS_CHANGE | SCAN_ROLL | DELIVERY | RETURN | CORRECTION | OTHER
+  action           String   // Human-readable mô tả hành động
+  operator         String   // Người thực hiện
+
+  // ── Snapshot Enrichment ────────────────────────
+  driverId         String?  // ID tài xế (khi gán / bàn giao)
+  driverName       String?  // Snapshot tên tài xế tại thời điểm ghi
+  vehiclePlate     String?  // Snapshot biển số xe tại thời điểm ghi
+  fromStatus       String?  // Trạng thái trước khi chuyển
+  toStatus         String?  // Trạng thái sau khi chuyển
+  note             String?  @db.Text
+  metadata         Json?    @db.Json  // Dữ liệu mở rộng (GPS, ảnh, chữ ký, ...)
+
+  shippingOrder ShippingOrder @relation(fields: [shippingOrderId], references: [id], onDelete: Cascade)
+
+  @@index([shippingOrderId, timestamp])
+  @@index([actionType, timestamp])
+  @@index([driverId])
+  @@map("order_events")
 }
 
 model ShippingOrderItem {
@@ -704,7 +786,7 @@ model Driver {
   status           DriverStatus @default(available)
   joinedDate       String
   notes            String?      @db.Text
-  avatar           String?      @db.Text
+  avatar           String?      @db.LongText
   idCardPhoto      String?      @db.LongText  // CCCD front
   idCardPhotoBack  String?      @db.LongText  // CCCD back
   licensePhoto     String?      @db.LongText  // GPLX front
@@ -816,6 +898,7 @@ model GpsLog {
 
   driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
 
+  @@index([driverId, timestamp])
   @@map("gps_logs")
 }
 
@@ -901,10 +984,18 @@ model UserActivityLog {
   module      String
   referenceId String?
   description String   @db.Text
+  
+  // ── Audit Enrichment ──────────────────────────
+  ipAddress   String?  @db.VarChar(50)
+  userAgent   String?  @db.Text
+  metadata    Json?    @db.Json     // Lưu trữ snapshot before/after
+  
   createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [uid], onDelete: Cascade)
 
+  @@index([module, action])
+  @@index([userId, createdAt])
   @@map("user_activity_logs")
 }
 
@@ -998,9 +1089,14 @@ model ImportBatch {
   subSku        String?
   specification String   @default("")
   color         String?
+  size          String?
+  salesUnit     String?
+  unitSize      String?
+  pricePerUnit  Float?
   otherSpecs    String?
   costPrice     Float?
   quantity      Int
+  minStock      Float    @default(0) // Cảnh báo tồn kho tối thiểu
   supplier      String?
   note          String?  @db.Text
   nhapKho       Float    @default(0)
@@ -1012,7 +1108,26 @@ model ImportBatch {
 
   rolls ProductRoll[]
 
+  @@index([supplier, subSku])
+  @@index([sku])
+  @@index([createdAt])
   @@map("import_batches")
+}
+
+// ── Warehouse Config ───────────────────────────────────────
+model Warehouse {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String
+  location      String?
+  capacity      Float    @default(0) // Sức chứa tối đa (m2 hoặc số cuộn)
+  currentUsage  Float    @default(0) // Mức sử dụng hiện tại
+  status        String   @default("active") // active | maintenance | full
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("warehouses")
 }
 
 // =========================================
@@ -1161,10 +1276,19 @@ model PurchaseOrderLog {
   action          String
   note            String?  @db.Text
   createdBy       String
+  
+  // ── Audit Enrichment ──────────────────────────
+  actionType      String?
+  fromStatus      String?
+  toStatus        String?
+  metadata        Json?    @db.Json
+  
   createdAt       DateTime @default(now())
 
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
 
+  @@index([purchaseOrderId, createdAt])
+  @@index([actionType])
   @@map("purchase_order_logs")
 }
 
@@ -1197,8 +1321,29 @@ model ReturnRequest {
   updatedAt       DateTime  @updatedAt
 
   order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  events          ReturnEvent[]
 
   @@map("return_requests")
+}
+
+// ── Return Lifecycle Event Log ────────────────────────
+model ReturnEvent {
+  id              String   @id @default(cuid())
+  returnRequestId String
+  timestamp       DateTime @default(now())
+  actionType      String   // CREATE | APPROVE | PROCESS | REFUND | RESOLVE | REJECT | OTHER
+  action          String
+  operator        String
+  fromStatus      String?
+  toStatus        String?
+  note            String?  @db.Text
+  metadata        Json?    @db.Json
+
+  returnRequest ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+
+  @@index([returnRequestId, timestamp])
+  @@index([actionType, timestamp])
+  @@map("return_events")
 }
 
 // ── Notification Log ───────────────────────────────────────

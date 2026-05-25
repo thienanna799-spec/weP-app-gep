@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ClipboardList, QrCode, Search, Truck, ShoppingCart, FileText, Users, Shield, UserCheck, Boxes, DollarSign, ShoppingBag, ScanSearch } from 'lucide-react';
+import { LayoutDashboard, Package, ClipboardList, QrCode, Search, Truck, ShoppingCart, FileText, Users, Shield, UserCheck, Boxes, DollarSign } from 'lucide-react';
 import { Role } from '../types/user.types';
 
 export interface SidebarItem {
@@ -22,9 +22,7 @@ export const SIDEBAR_CONFIG: SidebarItem[] = [
   { id: 'shipping',          labelKey: 'nav.shipping',           icon: Truck,           path: '/shipping',           defaultRoles: ['super_admin', 'admin', 'staff'] },
   { id: 'drivers',           labelKey: 'nav.drivers',            icon: Users,           path: '/drivers',            defaultRoles: ['super_admin', 'admin'] },
   { id: 'reports',           labelKey: 'nav.reports',            icon: FileText,        path: '/reports',            defaultRoles: ['super_admin', 'admin'] },
-  { id: 'procurement',       labelKey: 'nav.procurement',        icon: ShoppingBag,     path: '/procurement',        defaultRoles: ['super_admin', 'admin'] },
   { id: 'finance',           labelKey: 'nav.finance',            icon: DollarSign,      path: '/finance',            defaultRoles: ['super_admin', 'admin'] },
-  { id: 'ocr_audit',         labelKey: 'nav.ocr_audit',          icon: ScanSearch,      path: '/ocr-audit',          defaultRoles: ['super_admin', 'admin'] },
   { id: 'admin',             labelKey: 'nav.admin',              icon: Shield,          path: '/admin',              defaultRoles: ['super_admin'] },
 ];
 
@@ -72,7 +70,7 @@ export const MODULE_LABELS: Record<string, string> = {
   shipping: 'Vận chuyển',
   drivers: 'Tài xế',
   reports: 'Báo cáo',
-  procurement: 'Mua hàng',
+
   finance: 'Tài chính',
   admin: 'Quản trị',
 };

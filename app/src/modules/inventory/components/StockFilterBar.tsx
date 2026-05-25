@@ -93,4 +93,13 @@ const StockFilterBar: React.FC<Props> = ({
             className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-400" />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] font-bold text-slate
+          <label className="text-[10px] font-bold text-slate-500 uppercase">Đến ngày</label>
+          <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)}
+            className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-400" />
+        </div>
+      </div>
+    )}
+  </Card>
+);
+
+export default StockFilterBar;

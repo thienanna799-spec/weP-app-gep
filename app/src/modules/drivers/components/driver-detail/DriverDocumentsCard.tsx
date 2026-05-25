@@ -67,6 +67,20 @@ export const DriverDocumentsCard: React.FC<DriverDocumentsCardProps> = ({
         )}
       </h4>
 
+      {/* Avatar Row */}
+      <div className="mb-3">
+        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <Image className="w-3 h-3" /> Ảnh chân dung
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <PhotoThumb 
+            label="Chân dung" sublabel="Avatar" 
+            src={driver.avatar && !driver.avatar.includes('ui-avatars.com') ? driver.avatar : undefined} 
+            onClick={() => driver.avatar && !driver.avatar.includes('ui-avatars.com') && onOpenLightbox(driver.avatar)} 
+          />
+        </div>
+      </div>
+
       {/* CCCD Row */}
       <div className="mb-3">
         <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">

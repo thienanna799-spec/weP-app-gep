@@ -1,0 +1,39 @@
+{
+  "event_id": "2026-05-18-001",
+  "timestamp": "2026-05-18T04:12:42.639Z",
+  "workspace_id": "gep-erp-master",
+  "git_commit": "6510ec7",
+  "type": "FEATURE",
+  "severity": "MEDIUM",
+  "title": "Add Extended Inventory Fields",
+  "why": "User required tracking of granular product attributes (color, size, unit, price) within the inventory summary",
+  "root_cause": "ProductRoll and ImportBatch models lacked schema definitions for these fields",
+  "solution": "Modified Prisma schema, updated API controller to parse/return these fields from Excel, and added 5 new dynamic columns to InventoryTable",
+  "blast_radius": [
+    "inventory-stock-calculation",
+    "product-roll-status",
+    "order-reservation",
+    "qr-scanner",
+    "prisma-enum-mapping",
+    "all-queries-touching-changed-model",
+    "graph-hydration-required"
+  ],
+  "affected_files": [
+    "app/server/prisma/schema.prisma",
+    "app/server/src/controllers/stock-sync.controller.ts",
+    "app/src/modules/inventory/components/InventoryTable.tsx",
+    "app/src/modules/inventory/hooks/useStockSummary.ts"
+  ],
+  "affected_nodes": [],
+  "affected_domains": [
+    "inventory",
+    "database"
+  ],
+  "caused_by": [],
+  "related_incidents": [],
+  "prevention": "Consider EAV or JSON schemas for flexible product catalogs in the future if attributes grow too large",
+  "rollback_strategy": "Git revert schema and frontend changes, DB requires dropping columns manually if needed",
+  "governance_approval": true,
+  "data_loss": false,
+  "related_adr": []
+}

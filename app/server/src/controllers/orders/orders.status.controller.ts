@@ -1,87 +1,122 @@
 import { Response } from 'express';
 import { prisma } from '../../lib/prisma.js';
 import { sendSuccess, sendError } from '../../utils/apiResponse.js';
+import { OrderStatus, RollStatus } from '../../types/enums.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { AuthRequest } from '../../middlewares/auth.middleware.js';
 import { emitSync } from './orders.core.controller.js';
+import { recordSalesOrderEvent } from '../../services/orderTracking.service.js';
 import { autoSendInvoiceOnShipping } from '../invoice.controller.js';
 import { sendDeliveryProofNotification, sendTelegramMessage } from '../../services/telegram.service.js';
 
 /** PUT /api/orders/:id/approve */
 export const approveOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
   const orderId = req.params.id;
-  const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: true } });
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) { sendError(res, 'Order not found', 404); return; }
 
-  const inventoryToReserve: string[] = [];
-  const batchDeductions: { batchId: string, quantity: number }[] = [];
-  const missingItems: { productName: string, missing: number, unit: string }[] = [];
+  let inventoryToReserve: string[] = [];
+  let batchDeductions: { batchId: string, quantity: number }[] = [];
 
-  for (const item of order.items) {
-    const availableRolls = await prisma.productRoll.findMany({
-      where: { productName: item.productName, specification: item.specification, status: 'trong_kho' },
-      take: item.quantity,
-    });
-
-    if (availableRolls.length >= item.quantity) {
-      inventoryToReserve.push(...availableRolls.map(r => r.id));
-    } else {
-      const neededFromBatch = item.quantity - availableRolls.length;
-      const batchWhere: any = { tonKho: { gte: neededFromBatch } };
-      if (item.subSku) batchWhere.subSku = item.subSku; else batchWhere.productName = item.productName;
-
-      const batch = await prisma.importBatch.findFirst({ where: batchWhere, orderBy: { createdAt: 'desc' } });
-
-      if (batch) {
-        if (availableRolls.length > 0) inventoryToReserve.push(...availableRolls.map(r => r.id));
-        batchDeductions.push({ batchId: batch.id, quantity: neededFromBatch });
-      } else {
-        missingItems.push({ productName: item.productName, missing: neededFromBatch, unit: item.unit || 'cuộn' });
+  try {
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const currentOrder = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
+      if (!currentOrder) throw new Error('Đơn hàng không tồn tại');
+      if (currentOrder.status !== OrderStatus.cho_duyet) {
+        throw new Error('Đơn hàng đã được duyệt hoặc xử lý bởi người khác');
       }
-    }
-  }
 
-  if (missingItems.length > 0) {
-    const msg = missingItems.map(m => `${m.productName} (thiếu ${m.missing} ${m.unit})`).join(', ');
-    sendError(res, `Không đủ tồn kho: ${msg}. Vui lòng tạo Lệnh sản xuất!`, 400);
-    return;
-  }
+      for (const item of currentOrder.items) {
+        const availableRolls = await tx.productRoll.findMany({
+          where: { productName: item.productName, specification: item.specification, status: 'trong_kho' },
+          take: item.quantity,
+        });
 
-  const updatedOrder = await prisma.$transaction(async (tx) => {
-    if (inventoryToReserve.length > 0) {
-      await tx.productRoll.updateMany({ where: { id: { in: inventoryToReserve } }, data: { status: 'da_giu_cho_don', orderId: order.id } });
-      const scanHistories = inventoryToReserve.map(id => ({ rollId: id, action: `Được giữ cho đơn hàng ${order.code}`, operator: req.user!.name }));
-      await tx.rollScanHistory.createMany({ data: scanHistories });
-    }
+        if (availableRolls.length >= item.quantity) {
+          inventoryToReserve.push(...availableRolls.map(r => r.id));
+        } else {
+          const neededFromBatch = item.quantity - availableRolls.length;
+          const batchWhere: any = { tonKho: { gte: neededFromBatch } };
+          if (item.subSku) batchWhere.subSku = item.subSku; else batchWhere.productName = item.productName;
 
-    for (const deduction of batchDeductions) {
-      await tx.importBatch.update({
-        where: { id: deduction.batchId },
-        data: { xuatKho: { increment: deduction.quantity }, tonKho: { decrement: deduction.quantity } },
+          const batch = await tx.importBatch.findFirst({ where: batchWhere, orderBy: { createdAt: 'desc' } });
+
+          if (batch) {
+            if (availableRolls.length > 0) {
+              inventoryToReserve.push(...availableRolls.map(r => r.id));
+            }
+            batchDeductions.push({ batchId: batch.id, quantity: neededFromBatch });
+          } else {
+            throw new Error(`Không đủ tồn kho: ${item.productName} (yêu cầu ${item.quantity}, thiếu ${neededFromBatch} ${item.unit || 'cuộn'}). Vui lòng tạo Lệnh sản xuất!`);
+          }
+        }
+      }
+
+      if (inventoryToReserve.length > 0) {
+        const updateResult = await tx.productRoll.updateMany({
+          where: { id: { in: inventoryToReserve }, status: 'trong_kho' },
+          data: { status: 'da_giu_cho_don', orderId: order.id }
+        });
+        if (updateResult.count !== inventoryToReserve.length) {
+          throw new Error('Tranh chấp dữ liệu: Một số cuộn hàng đã được chọn bởi đơn khác. Vui lòng thử lại!');
+        }
+        const scanHistories = inventoryToReserve.map(id => ({ rollId: id, action: `Được giữ cho đơn hàng ${order.code}`, operator: req.user!.name }));
+        await tx.rollScanHistory.createMany({ data: scanHistories });
+      }
+
+      for (const deduction of batchDeductions) {
+        const updateResult = await tx.importBatch.updateMany({
+          where: { id: deduction.batchId, tonKho: { gte: deduction.quantity } },
+          data: { xuatKho: { increment: deduction.quantity }, tonKho: { decrement: deduction.quantity } },
+        });
+        if (updateResult.count === 0) {
+          throw new Error('Tranh chấp dữ liệu: Lô hàng không đủ số lượng tồn kho khả dụng. Vui lòng thử lại!');
+        }
+      }
+
+      return tx.order.update({
+        where: { id: order.id },
+        data: {
+          status: OrderStatus.da_duyet, approvedBy: req.user!.uid, approvedByName: req.user!.name, approvedAt: new Date(),
+        },
       });
-    }
-
-    return tx.order.update({
-      where: { id: order.id },
-      data: {
-        status: 'da_duyet' as any, approvedBy: req.user!.uid, approvedByName: req.user!.name, approvedAt: new Date(),
-        logs: { create: { action: 'Duyệt đơn hàng và giữ hàng', createdBy: req.user!.name || req.user!.email } },
-      },
     });
-  });
 
-  emitSync(req, 'order_updated', { orderId: order.id, type: 'approved' });
-  emitSync(req, 'inventory_updated', { orderId: order.id });
-  sendSuccess(res, updatedOrder, 200, 'Order approved and inventory reserved');
+    await recordSalesOrderEvent(orderId, {
+      actionType: 'APPROVE',
+      action: 'Duyệt đơn hàng và giữ hàng',
+      operator: req.user!.name || req.user!.uid,
+      fromStatus: order.status,
+      toStatus: 'da_duyet',
+      metadata: { reservedRolls: inventoryToReserve, deductions: batchDeductions }
+    });
+
+    emitSync(req, 'order_updated', { orderId: order.id, type: 'approved' });
+    emitSync(req, 'inventory_updated', { orderId: order.id });
+    sendSuccess(res, updatedOrder, 200, 'Order approved and inventory reserved');
+  } catch (err: any) {
+    sendError(res, err.message || 'Lỗi duyệt đơn hàng', 400);
+  }
 });
 
 /** PUT /api/orders/:id/reject */
 export const rejectOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { reason } = req.body as { reason?: string };
+  const oldOrder = await prisma.order.findUnique({ where: { id: req.params.id } });
   const order = await prisma.order.update({
     where: { id: req.params.id },
-    data: { status: 'tu_choi' as any, note: reason, logs: { create: { action: 'Từ chối đơn hàng', note: reason, createdBy: req.user!.name || req.user!.email } } },
+    data: { status: OrderStatus.tu_choi, note: reason },
   });
+
+  await recordSalesOrderEvent(req.params.id, {
+    actionType: 'CANCEL', // tu_choi is essentially cancel/reject
+    action: 'Từ chối đơn hàng',
+    operator: req.user!.name || req.user!.uid,
+    fromStatus: oldOrder?.status,
+    toStatus: 'tu_choi',
+    note: reason,
+  });
+
   sendSuccess(res, order, 200, 'Order rejected');
 });
 
@@ -94,11 +129,20 @@ export const cancelOrder = asyncHandler(async (req: AuthRequest, res: Response) 
   if (['dang_giao', 'hoan_thanh'].includes(existing.status)) { sendError(res, 'Không thể hủy đơn hàng đã xuất kho hoặc hoàn thành', 400); return; }
 
   const order = await prisma.$transaction(async (tx) => {
-    await tx.productRoll.updateMany({ where: { orderId: req.params.id }, data: { status: 'trong_kho' as any, orderId: null } });
+    await tx.productRoll.updateMany({ where: { orderId: req.params.id }, data: { status: RollStatus.trong_kho, orderId: null } });
     return tx.order.update({
       where: { id: req.params.id },
-      data: { status: 'huy' as any, note: reason, logs: { create: { action: 'Hủy đơn hàng', note: reason, createdBy: req.user!.name || req.user!.email } } },
+      data: { status: OrderStatus.huy, note: reason },
     });
+  });
+
+  await recordSalesOrderEvent(req.params.id, {
+    actionType: 'CANCEL',
+    action: 'Hủy đơn hàng',
+    operator: req.user!.name || req.user!.uid,
+    fromStatus: existing.status,
+    toStatus: 'huy',
+    note: reason,
   });
 
   emitSync(req, 'order_updated', { orderId: order.id, type: 'cancelled' });
@@ -123,17 +167,26 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
           await tx.importBatch.update({ where: { id: batch.id }, data: { xuatKho: { increment: item.quantity }, tonKho: { decrement: item.quantity } } });
         }
       }
-      await tx.productRoll.updateMany({ where: { orderId: orderId, status: 'da_giu_cho_don' }, data: { status: 'da_xuat_kho' as any } });
+      await tx.productRoll.updateMany({ where: { orderId: orderId, status: 'da_giu_cho_don' }, data: { status: RollStatus.da_xuat_kho } });
     });
   } else if (status === 'huy') {
     await prisma.$transaction(async (tx) => {
-      await tx.productRoll.updateMany({ where: { orderId: orderId, status: 'da_giu_cho_don' }, data: { status: 'trong_kho' as any, orderId: null } });
+      await tx.productRoll.updateMany({ where: { orderId: orderId, status: 'da_giu_cho_don' }, data: { status: RollStatus.trong_kho, orderId: null } });
     });
   }
 
+  const oldOrder = await prisma.order.findUnique({ where: { id: orderId } });
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
-    data: { status: status as any, logs: { create: { action: `Cập nhật trạng thái: ${status}`, createdBy: req.user!.name || req.user!.email } } },
+    data: { status: status as OrderStatus },
+  });
+
+  await recordSalesOrderEvent(orderId, {
+    actionType: 'STATUS_CHANGE',
+    action: `Cập nhật trạng thái: ${status}`,
+    operator: req.user!.name || req.user!.uid,
+    fromStatus: oldOrder?.status,
+    toStatus: status,
   });
 
   if (status === 'dang_giao') {

@@ -137,7 +137,7 @@ export default function NotificationCenter({ placement = 'bottom' }: { placement
               notifications.map(n => {
                 const cfg = TYPE_CONFIG[n.type] || { icon: <Bell size={14} />, color: '#6b7280', label: n.type };
                 return (
-                  <div key={n.id} onClick={() => { if(n.type === 'ocr_alert') window.location.href = '/ocr-audit'; }} className={`flex gap-3 px-4 py-3 hover:bg-gray-50 border-b border-gray-50 transition-colors ${n.type === 'ocr_alert' ? 'cursor-pointer' : ''}`}>
+                  <div key={n.id} onClick={() => { if(n.type === 'ocr_alert') window.location.href = '/drivers'; }} className={`flex gap-3 px-4 py-3 hover:bg-gray-50 border-b border-gray-50 transition-colors ${n.type === 'ocr_alert' ? 'cursor-pointer' : ''}`}>
                     <div className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
                       style={{ backgroundColor: `${cfg.color}15`, color: cfg.color }}>
                       {cfg.icon}

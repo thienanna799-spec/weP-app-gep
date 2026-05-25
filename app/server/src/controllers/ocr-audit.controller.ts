@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
+import { AuditReviewStatus } from '../types/enums.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 
@@ -91,7 +92,7 @@ export const reviewOcrAudit = asyncHandler(async (req: AuthRequest, res: Respons
 
   const updated = await prisma.ocrAuditLog.update({
     where: { id },
-    data: { reviewStatus: status as any }
+    data: { reviewStatus: status as AuditReviewStatus }
   });
 
   // Nếu Rejected, có thể tùy chỉnh: Trừ tiền tài xế, trừ FuelLog, hoặc tạo CustomerActivity (như 1 Task)

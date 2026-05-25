@@ -1,11 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, Menu, LogOut } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SIDEBAR_CONFIG, isModuleAllowed } from '../../config/sidebar';
 import { UserProfile } from '../../types/user.types';
 import NotificationCenter from './NotificationCenter';
 import { logout } from '../../services/authService';
+import { useStockSummary } from '../../modules/inventory/hooks/useStockSummary';
+import { useOrderAlerts } from '../../modules/orders/hooks/useOrderAlerts';
+import { useShippingAlerts } from '../../modules/shipping/hooks/useShippingAlerts';
+import { useProductionOrderAlerts } from '../../modules/production-orders/hooks/useProductionOrderAlerts';
 
 const LANGUAGES = [
   { code: 'vi', label: 'Tiếng Việt', flag: 'VN' },
@@ -22,6 +26,10 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ profile, isOpen, onClose, isCollapsed = false, onToggleCollapse }) => {
   const { t, i18n } = useTranslation();
+  const { alertCount } = useStockSummary();
+  const { pendingApprovalCount, unpaidCount, totalAlerts: orderAlertCount } = useOrderAlerts();
+  const { activeCount: shippingAlertCount } = useShippingAlerts();
+  const { activeCount: productionAlertCount } = useProductionOrderAlerts();
 
   const currentIndex = LANGUAGES.findIndex(l => l.code === i18n.language);
   const currentLang = LANGUAGES[currentIndex >= 0 ? currentIndex : 0];
@@ -45,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ profile, isOpen, onClose, isCollapsed
 
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
-        ${isCollapsed ? 'w-20' : 'w-56'} bg-slate-900 text-white flex flex-col
+        ${isCollapsed ? 'w-20' : 'w-52'} bg-slate-900 text-white flex flex-col
         transition-all duration-300 lg:translate-x-0
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
@@ -70,17 +78,17 @@ const Sidebar: React.FC<SidebarProps> = ({ profile, isOpen, onClose, isCollapsed
               className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 translate-x-1/2 z-50 bg-white border border-gray-200 p-1 rounded-full text-slate-400 hover:text-blue-600 shadow-sm transition-transform hover:scale-110"
               title="Toggle Sidebar"
             >
-              <Menu className="w-4 h-4" />
+              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
             </button>
           )}
         </div>
 
 
 
-        {/* Scrollable Area */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar relative flex flex-col">
+        {/* Fixed Area */}
+        <div className="flex-1 overflow-hidden relative flex flex-col">
           {/* Navigation */}
-          <nav className="flex-1 py-6 px-3 space-y-1">
+          <nav className="flex-1 py-3 px-3 space-y-0.5">
           {SIDEBAR_CONFIG.filter(item => {
             return isModuleAllowed(item.id, profile.role);
           }).map((item) => (
@@ -91,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ profile, isOpen, onClose, isCollapsed
                 if (window.innerWidth < 1024) onClose();
               }}
               className={({ isActive }) => `
-                flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200
+                flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative
                 ${isActive 
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
@@ -101,7 +109,52 @@ const Sidebar: React.FC<SidebarProps> = ({ profile, isOpen, onClose, isCollapsed
               title={isCollapsed ? t(item.labelKey) : undefined}
             >
               <item.icon className={`w-5 h-5 shrink-0 ${isCollapsed ? 'm-auto' : ''}`} />
-              {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden transition-all duration-300">{t(item.labelKey)}</span>}
+              {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden transition-all duration-300 flex-1">{t(item.labelKey)}</span>}
+              
+              {item.id === 'inventory' && alertCount > 0 && (
+                <span className={`
+                  ${isCollapsed ? 'absolute top-1 right-1' : 'ml-auto'}
+                  bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse
+                `}>
+                  {alertCount}
+                </span>
+              )}
+
+              {item.id === 'orders' && orderAlertCount > 0 && (
+                <span
+                  title={`${pendingApprovalCount} chờ duyệt · ${unpaidCount} chưa thanh toán`}
+                  className={`
+                    ${isCollapsed ? 'absolute top-1 right-1' : 'ml-auto'}
+                    bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse
+                  `}
+                >
+                  {orderAlertCount}
+                </span>
+              )}
+
+              {item.id === 'production_orders' && productionAlertCount > 0 && (
+                <span
+                  title={`${productionAlertCount} lệnh cần xử lý`}
+                  className={`
+                    ${isCollapsed ? 'absolute top-1 right-1' : 'ml-auto'}
+                    bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse
+                  `}
+                >
+                  {productionAlertCount}
+                </span>
+              )}
+
+              {item.id === 'shipping' && shippingAlertCount > 0 && (
+                <span
+                  title={`${shippingAlertCount} đơn hàng cần chuẩn bị/xuất kho/giao hàng`}
+                  className={`
+                    ${isCollapsed ? 'absolute top-1 right-1' : 'ml-auto'}
+                    bg-violet-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse
+                  `}
+                >
+                  {shippingAlertCount}
+                </span>
+              )}
             </NavLink>
           ))}
           </nav>
