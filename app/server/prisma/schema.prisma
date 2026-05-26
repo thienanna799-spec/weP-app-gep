@@ -45,8 +45,13 @@ model User {
 enum UserRole {
   super_admin
   admin
+  lead
   staff
+  nv_san_xuat
+  nv_tron_nguyen_lieu
+  nv_chuan_bi_hang
   driver
+  nv_tai_xe
   pending
 
   @@map("user_role")

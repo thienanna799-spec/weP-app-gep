@@ -12,13 +12,18 @@ interface AdminSecurityTabProps {
   onViewPending: () => void;
 }
 
-const ALL_ROLES: Role[] = ['super_admin', 'admin', 'staff', 'driver', 'pending'];
+const ALL_ROLES: Role[] = ['super_admin', 'admin', 'lead', 'staff', 'nv_san_xuat', 'nv_tron_nguyen_lieu', 'nv_chuan_bi_hang', 'driver', 'nv_tai_xe', 'pending'];
 
 const ROLE_COLORS: Record<Role, string> = {
   super_admin: 'text-indigo-600 bg-indigo-50',
   admin: 'text-blue-600 bg-blue-50',
+  lead: 'text-rose-600 bg-rose-50',
   staff: 'text-emerald-600 bg-emerald-50',
+  nv_san_xuat: 'text-orange-600 bg-orange-50',
+  nv_tron_nguyen_lieu: 'text-cyan-600 bg-cyan-50',
+  nv_chuan_bi_hang: 'text-violet-600 bg-violet-50',
   driver: 'text-amber-600 bg-amber-50',
+  nv_tai_xe: 'text-red-600 bg-red-50',
   pending: 'text-slate-400 bg-slate-50',
 };
 

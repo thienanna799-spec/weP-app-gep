@@ -54,8 +54,13 @@ export function getVisibleModules(role: Role): SidebarItem[] {
 export const ROLE_LABELS: Record<Role, string> = {
   super_admin: 'Super Admin',
   admin: 'Admin',
+  lead: 'Lead (Chỉ huy kho)',
   staff: 'Nhân viên',
+  nv_san_xuat: 'NV Sản xuất',
+  nv_tron_nguyen_lieu: 'NV Trộn nguyên liệu',
+  nv_chuan_bi_hang: 'NV Chuẩn bị hàng',
   driver: 'Tài xế',
+  nv_tai_xe: 'NV Tài xế',
   pending: 'Chờ duyệt',
 };
 

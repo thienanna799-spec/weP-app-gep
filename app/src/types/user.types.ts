@@ -1,4 +1,4 @@
-export type Role = 'super_admin' | 'admin' | 'staff' | 'driver' | 'pending';
+export type Role = 'super_admin' | 'admin' | 'lead' | 'staff' | 'nv_san_xuat' | 'nv_tron_nguyen_lieu' | 'nv_chuan_bi_hang' | 'driver' | 'nv_tai_xe' | 'pending';
 export type UserStatus = 'active' | 'blocked' | 'pending' | 'inactive';
 
 export interface UserProfile {
