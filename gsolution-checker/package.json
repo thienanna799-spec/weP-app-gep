@@ -1,0 +1,14 @@
+{
+  "name": "gsolution-checker",
+  "version": "1.0.0",
+  "description": "G-Solution order status checker → Google Sheets + Telegram",
+  "main": "checker.js",
+  "scripts": {
+    "start": "node checker.js",
+    "test-telegram": "node checker.js --test-telegram"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "puppeteer": "^23.0.0"
+  }
+}
