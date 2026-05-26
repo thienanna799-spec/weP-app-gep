@@ -78,8 +78,13 @@
   "roles": {
     "super_admin": "Super Admin",
     "admin": "Admin",
+    "lead": "Lead (Warehouse)",
     "staff": "Staff",
+    "nv_san_xuat": "Production Worker",
+    "nv_tron_nguyen_lieu": "Material Mixer",
+    "nv_chuan_bi_hang": "Packer",
     "driver": "Driver",
+    "nv_tai_xe": "Driver Assistant",
     "pending": "Pending"
   },
   "auth": {

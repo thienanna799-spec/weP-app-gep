@@ -111,7 +111,7 @@ const AdminPage: React.FC = () => {
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">{t('admin.role')}</label>
               <select className="h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm font-medium outline-none" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-                <option value="All">{t('common.all')}</option><option value="super_admin">{t('roles.super_admin')}</option><option value="admin">{t('roles.admin')}</option><option value="staff">{t('roles.staff')}</option><option value="pending">{t('roles.pending')}</option>
+                <option value="All">{t('common.all')}</option><option value="super_admin">{t('roles.super_admin')}</option><option value="admin">{t('roles.admin')}</option><option value="lead">{t('roles.lead')}</option><option value="staff">{t('roles.staff')}</option><option value="nv_san_xuat">{t('roles.nv_san_xuat')}</option><option value="nv_tron_nguyen_lieu">{t('roles.nv_tron_nguyen_lieu')}</option><option value="nv_chuan_bi_hang">{t('roles.nv_chuan_bi_hang')}</option><option value="driver">{t('roles.driver')}</option><option value="nv_tai_xe">{t('roles.nv_tai_xe')}</option><option value="pending">{t('roles.pending')}</option>
               </select>
             </div>
             <div>

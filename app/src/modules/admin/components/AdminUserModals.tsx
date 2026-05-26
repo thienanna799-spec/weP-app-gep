@@ -41,8 +41,13 @@ export const AdminUserModals: React.FC<AdminUserModalsProps> = ({
             {([
               { role: 'super_admin' as Role, desc: 'Toàn quyền điều hành hệ thống' },
               { role: 'admin' as Role, desc: 'Quản lý nghiệp vụ kinh doanh' },
+              { role: 'lead' as Role, desc: 'Chỉ huy kho — giám sát nhập xuất' },
               { role: 'staff' as Role, desc: 'Nhân viên vận hành sản xuất & kho' },
+              { role: 'nv_san_xuat' as Role, desc: 'Vận hành máy móc, tạo cuộn hàng' },
+              { role: 'nv_tron_nguyen_lieu' as Role, desc: 'Pha trộn vật tư theo BOM' },
+              { role: 'nv_chuan_bi_hang' as Role, desc: 'Soạn hàng, quét QR, đóng gói' },
               { role: 'driver' as Role, desc: 'Tài xế — chỉ dùng app DriverGo' },
+              { role: 'nv_tai_xe' as Role, desc: 'NV Tài xế — nhận lệnh qua Telegram' },
               { role: 'pending' as Role, desc: 'Thu hồi quyền — không truy cập được' },
             ]).map(r => {
               const modules = getVisibleModules(r.role);

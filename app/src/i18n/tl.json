@@ -78,8 +78,13 @@
   "roles": {
     "super_admin": "Super Admin",
     "admin": "Admin",
+    "lead": "Lead (Bodega)",
     "staff": "Kawani",
+    "nv_san_xuat": "Manggagawa sa Produksyon",
+    "nv_tron_nguyen_lieu": "Tagahalo ng Materyales",
+    "nv_chuan_bi_hang": "Tagabalot",
     "driver": "Driver",
+    "nv_tai_xe": "Katulong ng Driver",
     "pending": "Naghihintay"
   },
   "auth": {

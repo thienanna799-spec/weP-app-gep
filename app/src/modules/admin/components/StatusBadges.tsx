@@ -8,8 +8,13 @@ export const UserRoleBadge: React.FC<{ role: Role }> = ({ role }) => {
   switch (role) {
     case 'super_admin': return <Badge variant="red" className="font-black uppercase tracking-tighter">{t('roles.super_admin')}</Badge>;
     case 'admin': return <Badge variant="blue" className="font-bold">{t('roles.admin')}</Badge>;
+    case 'lead': return <Badge variant="pink" className="font-bold">{t('roles.lead')}</Badge>;
     case 'staff': return <Badge variant="purple" className="font-medium">{t('roles.staff')}</Badge>;
+    case 'nv_san_xuat': return <Badge variant="orange" className="font-medium">{t('roles.nv_san_xuat')}</Badge>;
+    case 'nv_tron_nguyen_lieu': return <Badge variant="cyan" className="font-medium">{t('roles.nv_tron_nguyen_lieu')}</Badge>;
+    case 'nv_chuan_bi_hang': return <Badge variant="violet" className="font-medium">{t('roles.nv_chuan_bi_hang')}</Badge>;
     case 'driver': return <Badge variant="amber" className="font-medium">{t('roles.driver')}</Badge>;
+    case 'nv_tai_xe': return <Badge variant="rose" className="font-medium">{t('roles.nv_tai_xe')}</Badge>;
     case 'pending': return <Badge variant="gray" className="italic">{t('roles.pending')}</Badge>;
     default: return <Badge variant="gray">{role}</Badge>;
   }
