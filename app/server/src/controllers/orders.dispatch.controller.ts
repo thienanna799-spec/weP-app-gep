@@ -357,10 +357,29 @@ export const failDelivery = asyncHandler(async (req: AuthRequest, res: Response)
     });
 
     // Return rolls to stock
+    const rollsToRestore = await tx.productRoll.findMany({
+      where: { orderId: order.id },
+      select: { id: true, importBatchId: true },
+    });
+
     await tx.productRoll.updateMany({
       where: { orderId: order.id },
       data: { status: RollStatus.trong_kho, orderId: null },
     });
+
+    // C4 Fix: Restore ImportBatch.tonKho for each batch that had rolls assigned
+    const batchCounts = new Map<string, number>();
+    for (const roll of rollsToRestore) {
+      if (roll.importBatchId) {
+        batchCounts.set(roll.importBatchId, (batchCounts.get(roll.importBatchId) || 0) + 1);
+      }
+    }
+    for (const [batchId, count] of batchCounts) {
+      await tx.importBatch.update({
+        where: { id: batchId },
+        data: { tonKho: { increment: count } },
+      });
+    }
 
     // ✅ Fix BUG 5: Reset driver status → available after delivery failure
     const driverIds = [...new Set(shippingOrders.map(s => s.assignedDriverId).filter(Boolean))] as string[];

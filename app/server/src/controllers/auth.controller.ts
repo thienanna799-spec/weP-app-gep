@@ -6,7 +6,10 @@ import { sendSuccess, sendError } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is not set.');
+}
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const DEFAULT_ADMIN_EMAIL = 'bachsydonggiphn@gmail.com';
 
@@ -39,7 +42,12 @@ export const googleAuth = asyncHandler(async (req: Request, res: Response) => {
     name = decoded.name || decoded.email || 'User';
     avatar = decoded.picture || '';
   } else {
-    // Fallback: trust the body (for dev when serviceAccount.json is missing)
+    // M3 Fix: Block fallback auth in production — prevents authentication bypass
+    if (process.env.NODE_ENV === 'production') {
+      sendError(res, 'Firebase token verification failed', 401);
+      return;
+    }
+    // Fallback: trust the body (ONLY for dev when serviceAccount.json is missing)
     const body = req.body as { email?: string; name?: string; avatar?: string; uid?: string };
     if (!body.email || !body.uid) {
       sendError(res, 'Firebase token verification failed. Provide uid and email in body for dev mode.', 401);
