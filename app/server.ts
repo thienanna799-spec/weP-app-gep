@@ -12,6 +12,7 @@ import { invalidateCacheForEvent } from './server/src/lib/report-cache.js';
 import { requestIdMiddleware, loggingMiddleware } from './server/src/middlewares/logging.middleware.js';
 import rateLimit from 'express-rate-limit';
 import { startBackupScheduler } from './server/src/lib/backup-scheduler.js';
+import { handleSocketRoomJoin } from './server/src/lib/socket-rooms.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,6 +44,8 @@ async function startServer() {
 
   io.on('connection', (socket) => {
     console.log('Client connected to Socket.IO:', socket.id);
+    // Phase 8: Auto-join rooms based on user role
+    handleSocketRoomJoin(socket);
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id);
     });
@@ -93,12 +96,30 @@ async function startServer() {
     // Start automated daily backup scheduler
     startBackupScheduler();
   });
+
+  // ── Phase 9: Graceful Shutdown ──────────────────────────
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`\n⏳ ${signal} received. Graceful shutdown initiated...`);
+    httpServer.close(() => {
+      console.log('✅ HTTP server closed.');
+    });
+    io.close();
+    console.log('✅ Socket.IO closed.');
+    const { prisma } = await import('./server/src/lib/prisma.js');
+    await prisma.$disconnect();
+    console.log('✅ Database disconnected.');
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
-// ── Global error handlers to prevent crash ─────────────
+// ── Global error handlers ──────────────────────────────
 process.on('uncaughtException', (err) => {
   console.error('💥 Uncaught Exception:', err.message);
   console.error(err.stack);
+  process.exit(1); // Phase 9: Exit to let PM2/supervisor restart
 });
 
 process.on('unhandledRejection', (reason: any) => {
